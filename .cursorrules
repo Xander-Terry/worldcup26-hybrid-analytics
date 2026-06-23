@@ -1,0 +1,37 @@
+# .cursorrules - WC26 Hybrid Analytics v3.1
+# Do not override without explicit human approval.
+
+## PACKAGE MANAGER
+- Always use pnpm. Never use npm or yarn.
+- Never commit package-lock.json or yarn.lock.
+
+## CODE PARADIGMS
+- Prefer React Server Components by default.
+- Use "use client" only when browser APIs or interactivity require it.
+- Use Server Actions for ALL data mutations and fetches.
+- No useEffect for data fetching.
+- No global state libraries (Redux, Zustand).
+
+## DUAL-MODE ISOLATION
+- components/global and components/bluelock must never import from each other.
+- lib/ml/global and lib/ml/bluelock are fully isolated.
+- Blue Lock mode applies to FW position players only.
+- FIFA/EA ratings are banned from all ML pipelines.
+
+## FILE EDITING
+- Never modify more than 5 files per change.
+- No global refactors without explicit approval.
+
+## ML RULES
+- All ML runs in Python scripts under /scripts/. Never in Next.js.
+- Grade bands defined only in config/ml-bluelock.ts and lib/ml/bluelock/grades.ts.
+- creativity_score is a primary feature in: BL Pass category, Ego Freedom axis, Global Chance Creation.
+
+## TYPESCRIPT
+- Strict mode ON. No `any` without explanatory comment.
+- Prefer `type` over `interface` for data shapes.
+
+## GIT
+- Commit format: slice(N): description
+- Never commit .env.local or real keys.
+- Run pnpm lint && pnpm typecheck before every commit.
