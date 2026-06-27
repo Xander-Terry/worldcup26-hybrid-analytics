@@ -1,4 +1,4 @@
-export const BL_K = 4
+﻿export const BL_K = 4
 export const BL_MINUTES_THRESHOLD = 5
 
 export const BL_CATEGORIES = [

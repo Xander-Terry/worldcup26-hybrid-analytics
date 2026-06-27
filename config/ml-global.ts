@@ -1,4 +1,4 @@
-export const GLOBAL_K = 6
+﻿export const GLOBAL_K = 6
 export const MINUTES_THRESHOLD = 5
 
 export const UMAP_PARAMS = {
@@ -7,7 +7,7 @@ export const UMAP_PARAMS = {
   random_state: 42,
 }
 
-// Axis display metadata � weights live in scripts/cluster_global.py
+// Axis display metadata ï¿½ weights live in scripts/cluster_global.py
 export const GLOBAL_AXES = [
   { key: 'attacking_threat',    label: 'Attacking Threat',    color: '#ef4444' },
   { key: 'chance_creation',     label: 'Chance Creation',     color: '#f97316' },
