@@ -5,7 +5,7 @@ Runs:   K-means (k=4) on 6 BL category scores
 Writes: cluster_results_bluelock to Supabase
 
 k=4 because the FW population (~273 players) is smaller.
-Archetype labels are Blue Lock-themed â€” update after inspecting centroids.
+Archetype labels are Blue Lock-themed - update after inspecting centroids.
 """
 
 import os
@@ -28,7 +28,7 @@ if not SUPABASE_URL or not SUPABASE_KEY:
 
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-# â”€â”€ Config â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# -- Config --------------------------------------------------------------------
 K = 4
 RANDOM_STATE = 42
 
@@ -42,7 +42,7 @@ ARCHETYPE_LABELS = {
     3: "Shadow Nine",
 }
 
-# â”€â”€ Load â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# -- Load ----------------------------------------------------------------------
 print("\n[1/4] Loading player_stats_bluelock from Supabase...")
 
 all_rows = []
@@ -73,7 +73,7 @@ if len(df) < K:
     print(f"ERROR: Not enough players ({len(df)}) for k={K}")
     sys.exit(1)
 
-# â”€â”€ Scale + cluster â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# -- Scale + cluster -----------------------------------------------------------
 print(f"\n[2/4] Scaling and running K-means (k={K})...")
 X = df[BL_COLS].values
 scaler = StandardScaler()
@@ -98,7 +98,7 @@ for cid, count in pd.Series(cluster_ids).value_counts().sort_index().items():
     label = ARCHETYPE_LABELS.get(cid, f"Cluster {cid}")
     print(f"  Cluster {cid} ({label}): {count} forwards")
 
-# â”€â”€ Fetch player names for spot-checking â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# -- Fetch player names for spot-checking --------------------------------------
 print("\n[3/4] Spot-checking clusters against known players...")
 player_ids = df["player_id"].tolist()
 
@@ -117,11 +117,11 @@ for cid in range(K):
     cluster_players = df[df["cluster_id"] == cid]["player_name"].dropna()
     sample = cluster_players.head(8).tolist()
     label = ARCHETYPE_LABELS.get(cid, f"Cluster {cid}")
-    print(f"\n  Cluster {cid} â€” {label}:")
+    print(f"\n  Cluster {cid} - {label}:")
     for p in sample:
         print(f"    {p}")
 
-# â”€â”€ Upsert â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# -- Upsert --------------------------------------------------------------------
 print("\n[4/4] Upserting cluster_results_bluelock...")
 df["archetype_label"] = df["cluster_id"].map(ARCHETYPE_LABELS).fillna("Unknown")
 
@@ -138,7 +138,7 @@ for i in range(0, len(records), 100):
     supabase.table("cluster_results_bluelock").upsert(
         chunk, on_conflict="player_id"
     ).execute()
-    print(f"  cluster_results_bluelock: {i+1}â€“{min(i+100, len(records))}")
+    print(f"  cluster_results_bluelock: {i+1}-{min(i+100, len(records))}")
 
 print(f"""
 âœ… Blue Lock clustering complete!
@@ -151,5 +151,5 @@ ACTION REQUIRED:
    Update ARCHETYPE_LABELS in this script to match real cluster meanings.
    Re-run to push updated labels to Supabase.
 
-Slice 4 + 5 complete. Move to Slice 6 â€” Frontend.
+Slice 4 + 5 complete. Move to Slice 6 - Frontend.
 """)
