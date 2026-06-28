@@ -16,7 +16,12 @@ export default function DashboardPage({
         </p>
       </div>
 
-      <ModeTabBar activeMode={mode} />
+      <ModeTabBar
+        activeMode={mode}
+        onModeChange={() => {}}
+      />
+
+
 
       <div className="rounded-lg border border-border p-8 text-center text-muted-foreground">
         {mode === 'global' ? (

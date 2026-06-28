@@ -18,7 +18,7 @@ export default function RootLayout({
     return (
       <html lang="en" className="dark">
         <body className={`${inter.className} bg-background text-foreground min-h-screen`}>
-          <NavBar />
+          <NavBar mode="global" />
           <main className="container mx-auto px-4 py-6">
             {children}
           </main>
