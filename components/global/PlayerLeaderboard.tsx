@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react"
 import { ChevronDown, ChevronUp, ArrowUpDown, Search } from "lucide-react"
-import { AXIS_META, CLUSTER_COLORS } from "@/lib/types"
+import { AXIS_META } from "@/lib/types"
 import type { GlobalPlayer } from "@/lib/types"
 import { PlayerAvatar } from "@/components/shared/PlayerAvatar"
 import { LeaderboardSkeleton } from "@/components/shared/LoadingSkeleton"
@@ -267,3 +267,4 @@ export function PlayerLeaderboard({
     </div>
   )
 }
+

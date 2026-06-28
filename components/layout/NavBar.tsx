@@ -1,7 +1,6 @@
 ﻿"use client"
 
 import Link from "next/link"
-import { usePathname, useSearchParams } from "next/navigation"
 import { Globe } from "lucide-react"
 
 type Props = {
@@ -81,3 +80,4 @@ export function NavBar({ mode }: Props) {
     </header>
   )
 }
+

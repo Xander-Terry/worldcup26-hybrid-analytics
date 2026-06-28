@@ -3,10 +3,9 @@
 type Props = {
   clusterId:      number
   archetypeLabel: string
-  mode?:          "global" | "bluelock"
 }
 
-export function ClusterBadge({ clusterId, archetypeLabel, mode = "global" }: Props) {
+export function ClusterBadge({ clusterId, archetypeLabel }: Props) {
   const color = CLUSTER_COLORS[clusterId] ?? "#94a3b8"
 
   return (

@@ -70,7 +70,6 @@ export function BLRadarChart({ striker, size = 300 }: Props) {
     striker.grades.grade_defense,
   ]
 
-  const scale = size / SIZE
 
   return (
     <svg
@@ -196,3 +195,4 @@ export function BLRadarChart({ striker, size = 300 }: Props) {
     </svg>
   )
 }
+

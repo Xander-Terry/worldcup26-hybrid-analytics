@@ -3,6 +3,57 @@
 import { createClient } from "@/lib/supabase/server"
 import type { GlobalPlayer, BLStriker, LetterGrade } from "@/lib/types"
 
+// ── Supabase join row shapes ──────────────────────────────────────────────────
+
+type GlobalStatsRow = {
+  minutes:             number
+  goals:               number
+  assists:             number
+  attacking_threat:    number
+  chance_creation:     number
+  ball_progression:    number
+  defensive_actions:   number
+  possession_security: number
+  physical_impact:     number
+}
+
+type ClusterGlobalRow = {
+  cluster_id:      number
+  archetype_label: string
+  umap_x:          number
+  umap_y:          number
+}
+
+type BLStatsRow = {
+  shoot:         number
+  offense:       number
+  dribble:       number
+  pass:          number
+  speed:         number
+  defense:       number
+  grade_shoot:   string
+  grade_offense: string
+  grade_dribble: string
+  grade_pass:    string
+  grade_speed:   string
+  grade_defense: string
+  overall_score: number
+  overall_grade: string
+  ego_x:         number
+  ego_y:         number
+}
+
+type RawStatsRow = {
+  minutes: number
+  goals:   number
+  assists: number
+}
+
+type ClusterBLRow = {
+  cluster_id:      number
+  archetype_label: string
+}
+
 // ── Global Mode ───────────────────────────────────────────────────────────────
 
 export async function getGlobalPlayers(): Promise<GlobalPlayer[]> {
@@ -44,15 +95,15 @@ export async function getGlobalPlayers(): Promise<GlobalPlayer[]> {
   return (data ?? [])
     .filter((p) => p.player_stats_global && p.cluster_results_global)
     .map((p) => {
-      const stats   = p.player_stats_global as any
-      const cluster = p.cluster_results_global as any
+      const stats   = p.player_stats_global as unknown as GlobalStatsRow
+      const cluster = p.cluster_results_global as unknown as ClusterGlobalRow
 
       return {
         id:          p.id,
         name:        p.name,
         team:        p.team,
         nationality: p.team,
-        position:    p.position as any,
+        position:    p.position as GlobalPlayer["position"],
         goals:       stats.goals   ?? 0,
         assists:     stats.assists ?? 0,
         minutes:     stats.minutes ?? 0,
@@ -111,9 +162,9 @@ export async function getBLStrikers(): Promise<BLStriker[]> {
   return (data ?? [])
     .filter((p) => p.player_stats_bluelock && p.cluster_results_bluelock)
     .map((p) => {
-      const bl      = p.player_stats_bluelock as any
-      const raw     = p.player_stats_raw as any
-      const cluster = p.cluster_results_bluelock as any
+      const bl      = p.player_stats_bluelock as unknown as BLStatsRow
+      const raw     = p.player_stats_raw      as unknown as RawStatsRow | null
+      const cluster = p.cluster_results_bluelock as unknown as ClusterBLRow
 
       return {
         id:          p.id,
@@ -150,11 +201,11 @@ export async function getBLStrikers(): Promise<BLStriker[]> {
     .sort((a, b) => b.overall_score - a.overall_score)
 }
 
-// ── Summary stats for StatCards ───────────────────────────────────────────────
+// ── Summary stats ─────────────────────────────────────────────────────────────
 
 export type SummaryStats = {
-  totalPlayers:  number
-  totalMatches:  number
+  totalPlayers: number
+  totalMatches: number
   topScorer: {
     name:    string
     team:    string
@@ -166,13 +217,11 @@ export type SummaryStats = {
 export async function getSummaryStats(): Promise<SummaryStats> {
   const supabase = await createClient()
 
-  // Total outfield players
   const { count: playerCount } = await supabase
     .from("players")
     .select("id", { count: "exact", head: true })
     .not("position", "eq", "GK")
 
-  // Top scorer — player with most goals from raw stats
   const { data: topScorerData } = await supabase
     .from("player_stats_raw")
     .select("player_id, goals, assists")
@@ -200,7 +249,7 @@ export async function getSummaryStats(): Promise<SummaryStats> {
 
   return {
     totalPlayers: playerCount ?? 0,
-    totalMatches: 48,             // WC 2026 group stage — update when known
+    totalMatches: 48,
     topScorer,
   }
 }

@@ -1,6 +1,5 @@
 ﻿"use client"
 
-import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
 import { Globe, Zap } from "lucide-react"
 
@@ -67,3 +66,4 @@ export function ModeTabBar({ activeMode, onModeChange }: Props) {
     </div>
   )
 }
+

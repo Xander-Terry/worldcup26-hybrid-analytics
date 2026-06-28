@@ -1,35 +1,23 @@
-import { ModeTabBar } from '@/components/layout/ModeTabBar'
+﻿import { Suspense } from "react"
+import { getGlobalPlayers, getBLStrikers, getSummaryStats } from "@/lib/actions/players"
+import { DashboardClient } from "./DashboardClient"
+import { LeaderboardSkeleton } from "@/components/shared/LoadingSkeleton"
 
-export default function DashboardPage({
-  searchParams,
-}: {
-  searchParams: { mode?: string }
-}) {
-  const mode = searchParams.mode === 'bluelock' ? 'bluelock' : 'global'
+export default async function DashboardPage() {
+  // All three fetches run in parallel
+  const [globalPlayers, blStrikers, summary] = await Promise.all([
+    getGlobalPlayers(),
+    getBLStrikers(),
+    getSummaryStats(),
+  ])
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">WC 2026 Analytics</h1>
-        <p className="text-muted-foreground mt-1">
-          FIFA World Cup 2026 � Player Performance Tracker
-        </p>
-      </div>
-
-      <ModeTabBar
-        activeMode={mode}
-        onModeChange={() => {}}
+    <Suspense fallback={<LeaderboardSkeleton />}>
+      <DashboardClient
+        globalPlayers={globalPlayers}
+        blStrikers={blStrikers}
+        summary={summary}
       />
-
-
-
-      <div className="rounded-lg border border-border p-8 text-center text-muted-foreground">
-        {mode === 'global' ? (
-          <p>Global Analytics Mode � leaderboard and clustering coming in Slice 6</p>
-        ) : (
-          <p>Blue Lock Mode � striker analysis coming in Slice 7</p>
-        )}
-      </div>
-    </div>
+    </Suspense>
   )
 }

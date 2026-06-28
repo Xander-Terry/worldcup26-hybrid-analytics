@@ -1,7 +1,8 @@
 ﻿"use client"
 
 import { GRADE_COLORS, BL_CAT_META } from "@/lib/types"
-import type { BLStriker } from "@/lib/types"
+// ADDED: LetterGrade imported right here
+import type { BLStriker, LetterGrade } from "@/lib/types" 
 import { BLRadarChart } from "@/components/bluelock/BLRadarChart"
 import { BLOverallGrade } from "@/components/bluelock/BLOverallGrade"
 import { BLLetterGrade } from "@/components/bluelock/BLLetterGrade"
@@ -133,10 +134,11 @@ export function BLStrikerCard({ striker }: Props) {
       {/* Category breakdown */}
       <div className="grid grid-cols-6 gap-1">
         {BL_CAT_META.map((cat, i) => {
-          const gradeKey   = `grade_${cat.key}` as keyof typeof striker.grades
-          const catGrade   = striker.grades[gradeKey]
-          const catColor   = GRADE_COLORS[catGrade as keyof typeof GRADE_COLORS]
-          const rawScore   = catScores[i]
+          const gradeKey = `grade_${cat.key}` as keyof typeof striker.grades
+          // CAST IT HERE AS LetterGrade TO KEEP CLEAN
+          const catGrade = striker.grades[gradeKey] as LetterGrade 
+          const catColor = GRADE_COLORS[catGrade]
+          const rawScore = catScores[i]
 
           return (
             <div
@@ -154,7 +156,8 @@ export function BLStrikerCard({ striker }: Props) {
               >
                 {Math.round(rawScore)}
               </p>
-              <BLLetterGrade grade={catGrade as any} size="sm" />
+              {/* Now you can just use catGrade cleanly here without double-casting */}
+              <BLLetterGrade grade={catGrade} size="sm" />
             </div>
           )
         })}
@@ -162,3 +165,4 @@ export function BLStrikerCard({ striker }: Props) {
     </div>
   )
 }
+

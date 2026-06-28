@@ -10,9 +10,14 @@ import { PlayerAvatar } from "@/components/shared/PlayerAvatar"
 import { ClusterBadge } from "@/components/shared/ClusterBadge"
 import { RadarSkeleton } from "@/components/shared/LoadingSkeleton"
 
-// Custom axis tick — each label rendered in its stat color
-function AxisTick({ x, y, payload }: any) {
-  const axis = AXIS_META.find(a => a.full === payload.value)
+type TickProps = {
+  x?:       string | number
+  y?:       string | number
+  payload?: { value: string }
+}
+
+function AxisTick({ x = 0, y = 0, payload }: TickProps) {
+  const axis = AXIS_META.find(a => a.full === payload?.value)
   return (
     <text
       x={x} y={y}
@@ -23,14 +28,14 @@ function AxisTick({ x, y, payload }: any) {
       fontFamily="DM Mono, monospace"
       fontWeight={700}
     >
-      {axis?.label ?? payload.value}
+      {axis?.label ?? payload?.value}
     </text>
   )
 }
 
 type Props = {
-  primary:   GlobalPlayer | null
-  compare?:  GlobalPlayer | null
+  primary:  GlobalPlayer | null
+  compare?: GlobalPlayer | null
 }
 
 export function GlobalRadarChart({ primary, compare }: Props) {
@@ -53,7 +58,6 @@ export function GlobalRadarChart({ primary, compare }: Props) {
   const primaryData = toChartData(primary.axes)
   const compareData = compare ? toChartData(compare.axes) : null
 
-  // Merge into single data array for recharts
   const chartData = primaryData.map((d, i) => ({
     axis:    d.axis,
     primary: d.value,
@@ -62,12 +66,9 @@ export function GlobalRadarChart({ primary, compare }: Props) {
 
   return (
     <div className="rounded-xl border border-[#E2E8F0] bg-white p-4">
-      {/* Header */}
       <div className="flex items-start justify-between mb-4">
         <div>
-          <p className="text-sm font-semibold text-[#0F172A] mb-1">
-            Performance Radar
-          </p>
+          <p className="text-sm font-semibold text-[#0F172A] mb-1">Performance Radar</p>
           <PlayerAvatar
             name={primary.name}
             nationality={primary.nationality}
@@ -81,7 +82,6 @@ export function GlobalRadarChart({ primary, compare }: Props) {
         />
       </div>
 
-      {/* Compare legend */}
       {compare && (
         <div className="flex items-center gap-4 mb-3">
           <div className="flex items-center gap-1.5">
@@ -99,12 +99,13 @@ export function GlobalRadarChart({ primary, compare }: Props) {
         </div>
       )}
 
-      {/* Chart */}
       <ResponsiveContainer width="100%" height={240}>
         <RadarChart data={chartData} margin={{ top: 10, right: 20, bottom: 10, left: 20 }}>
           <PolarGrid gridType="polygon" stroke="#E2E8F0" />
-          <PolarAngleAxis dataKey="axis" tick={<AxisTick />} />
-
+          <PolarAngleAxis
+            dataKey="axis"
+            tick={(props: TickProps) => <AxisTick {...props} />}
+          />
           <Radar
             name={primary.name}
             dataKey="primary"
@@ -114,7 +115,6 @@ export function GlobalRadarChart({ primary, compare }: Props) {
             strokeWidth={2}
             dot={false}
           />
-
           {compare && compareData && (
             <Radar
               name={compare.name}
@@ -126,15 +126,14 @@ export function GlobalRadarChart({ primary, compare }: Props) {
               dot={false}
             />
           )}
-
           <Tooltip
-            formatter={(value, name) => [Number(value ?? 0), String(name)]}
-            contentStyle={{
-              background: "#fff",
-              border: "1px solid #E2E8F0",
+            formatter={(value: unknown, name: unknown) => [String(value), String(name)]}
+              contentStyle={{
+              background:   "#fff",
+              border:       "1px solid #E2E8F0",
               borderRadius: 8,
-              fontSize: 11,
-              fontFamily: "DM Mono, monospace",
+              fontSize:     11,
+              fontFamily:   "DM Mono, monospace",
             }}
           />
         </RadarChart>

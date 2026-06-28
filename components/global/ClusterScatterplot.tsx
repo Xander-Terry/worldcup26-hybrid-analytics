@@ -8,7 +8,10 @@ import { CLUSTER_COLORS } from "@/lib/types"
 import type { GlobalPlayer } from "@/lib/types"
 import { ClusterBadge } from "@/components/shared/ClusterBadge"
 
-// Unique archetype labels + cluster IDs from player list
+type TooltipPayloadItem = {
+  payload: GlobalPlayer
+}
+
 function getArchetypes(players: GlobalPlayer[]) {
   const seen = new Map<number, string>()
   players.forEach(p => {
@@ -17,10 +20,9 @@ function getArchetypes(players: GlobalPlayer[]) {
   return Array.from(seen.entries()).sort((a, b) => a[0] - b[0])
 }
 
-// Custom tooltip
-function CustomTooltip({ active, payload }: any) {
+function CustomTooltip({ active, payload }: { active?: boolean; payload?: TooltipPayloadItem[] }) {
   if (!active || !payload?.length) return null
-  const p: GlobalPlayer = payload[0]?.payload
+  const p = payload[0]?.payload
   if (!p) return null
 
   return (
@@ -38,10 +40,16 @@ function CustomTooltip({ active, payload }: any) {
   )
 }
 
-// Custom dot — larger + outlined for selected player
-function ScatterDot(props: any) {
-  const { cx, cy, payload, selectedId } = props
-  const color    = CLUSTER_COLORS[payload.cluster_id] ?? "#94a3b8"
+type DotProps = {
+  cx?:        number
+  cy?:        number
+  payload?:   GlobalPlayer
+  selectedId?: string | null
+}
+
+function ScatterDot({ cx = 0, cy = 0, payload, selectedId }: DotProps) {
+  if (!payload) return null
+  const color      = CLUSTER_COLORS[payload.cluster_id] ?? "#94a3b8"
   const isSelected = payload.id === selectedId
 
   return (
@@ -61,9 +69,9 @@ function ScatterDot(props: any) {
 }
 
 type Props = {
-  players:    GlobalPlayer[]
+  players:     GlobalPlayer[]
   selectedId?: string | null
-  onSelect?:  (player: GlobalPlayer) => void
+  onSelect?:   (player: GlobalPlayer) => void
 }
 
 export function ClusterScatterplot({ players, selectedId, onSelect }: Props) {
@@ -84,48 +92,30 @@ export function ClusterScatterplot({ players, selectedId, onSelect }: Props) {
           <XAxis
             dataKey="umap_x"
             type="number"
-            domain={["auto","auto"]}
+            domain={["auto", "auto"]}
             tick={{ fontSize: 9, fontFamily: "DM Mono, monospace", fill: "#94A3B8" }}
             tickLine={false}
             axisLine={false}
-            label={{
-              value: "UMAP Dimension 1",
-              position: "insideBottomRight",
-              offset: -4,
-              fontSize: 9,
-              fill: "#94A3B8",
-              fontFamily: "DM Mono, monospace",
-            }}
           />
           <YAxis
             dataKey="umap_y"
             type="number"
-            domain={["auto","auto"]}
+            domain={["auto", "auto"]}
             tick={{ fontSize: 9, fontFamily: "DM Mono, monospace", fill: "#94A3B8" }}
             tickLine={false}
             axisLine={false}
-            label={{
-              value: "UMAP Dimension 2",
-              angle: -90,
-              position: "insideLeft",
-              offset: 8,
-              fontSize: 9,
-              fill: "#94A3B8",
-              fontFamily: "DM Mono, monospace",
-            }}
           />
           <Tooltip content={<CustomTooltip />} />
-
           <Scatter
             data={players}
-            shape={(props: any) => (
+            shape={(props: DotProps) => (
               <ScatterDot {...props} selectedId={selectedId} />
             )}
-            onClick={(point) => {
-              const player = point?.payload as GlobalPlayer
-              if (player) onSelect?.(player)
+            onClick={(point: { payload?: GlobalPlayer }) => {
+              if (point?.payload) {
+                onSelect?.(point.payload)
+              }
             }}
-
           >
             {players.map(p => (
               <Cell
@@ -137,7 +127,6 @@ export function ClusterScatterplot({ players, selectedId, onSelect }: Props) {
         </ScatterChart>
       </ResponsiveContainer>
 
-      {/* Legend */}
       <div className="flex flex-wrap gap-2 mt-3">
         {archetypes.map(([cid, label]) => (
           <ClusterBadge key={cid} clusterId={cid} archetypeLabel={label} />
