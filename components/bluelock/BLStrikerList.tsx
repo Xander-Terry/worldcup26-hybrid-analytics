@@ -5,6 +5,7 @@ import { motion } from "framer-motion"
 import { GRADE_COLORS, BL_CAT_META } from "@/lib/types"
 import type { BLStriker, LetterGrade } from "@/lib/types"
 import { BLLetterGrade } from "@/components/bluelock/BLLetterGrade"
+import { getFlag } from "@/lib/flags"
 
 type SortKey = "overall" | "shoot" | "offense" | "dribble" | "pass" | "speed" | "defense"
 
@@ -18,24 +19,45 @@ const SORT_LABELS: { key: SortKey; label: string }[] = [
   { key: "defense",  label: "DEF" },
 ]
 
+const PAGE_SIZE = 10
+
 function getScore(p: BLStriker, key: SortKey): number {
   if (key === "overall") return p.overall_score
   return p.categories[key as keyof typeof p.categories]
 }
 
+function shortName(name: string) {
+  const parts = name.split(" ")
+  if (parts.length < 2 || name.length <= 14) return name
+  return `${parts[0][0]}. ${parts.slice(1).join(" ")}`
+}
+
 type Props = {
-  strikers:       BLStriker[]
-  selectedId?:    string | null
-  onSelect:       (striker: BLStriker) => void
+  strikers:    BLStriker[]
+  selectedId?: string | null
+  onSelect:    (striker: BLStriker) => void
 }
 
 export function BLStrikerList({ strikers, selectedId, onSelect }: Props) {
   const [sortKey, setSortKey] = useState<SortKey>("overall")
+  const [page,    setPage]    = useState(1)
 
   const sorted = useMemo(() =>
     [...strikers].sort((a, b) => getScore(b, sortKey) - getScore(a, sortKey)),
     [strikers, sortKey]
   )
+
+  const totalPages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE))
+  const currentPage = Math.min(page, totalPages)
+  const pageRows    = sorted.slice(
+    (currentPage - 1) * PAGE_SIZE,
+    currentPage * PAGE_SIZE
+  )
+
+  function handleSort(key: SortKey) {
+    setSortKey(key)
+    setPage(1)
+  }
 
   return (
     <div className="flex h-full flex-col rounded-xl border border-[#1e3a6a] bg-[#0E1D3D] overflow-hidden">
@@ -53,7 +75,7 @@ export function BLStrikerList({ strikers, selectedId, onSelect }: Props) {
           return (
             <button
               key={key}
-              onClick={() => setSortKey(key)}
+              onClick={() => handleSort(key)}
               className="shrink-0 rounded px-2 py-1 font-mono text-[9px] font-bold transition-colors"
               style={{
                 color:           active ? "#00F0FF" : "#6B7F9B",
@@ -67,12 +89,12 @@ export function BLStrikerList({ strikers, selectedId, onSelect }: Props) {
         })}
       </div>
 
-      {/* Roster list */}
-      <div className="flex-1 overflow-y-auto no-scrollbar px-2 py-2 space-y-1">
-        {sorted.map((striker) => {
-          const isSelected  = striker.id === selectedId
-          const gradeColor  = GRADE_COLORS[striker.overall_grade]
-          const isElite     = striker.overall_grade === "S+" || striker.overall_grade === "S"
+      {/* Roster rows — fixed height scrollable area */}
+      <div className="flex-1 overflow-y-auto no-scrollbar px-2 py-2 space-y-1 min-h-0">
+        {pageRows.map((striker) => {
+          const isSelected = striker.id === selectedId
+          const gradeColor = GRADE_COLORS[striker.overall_grade]
+          const isElite    = striker.overall_grade === "S+" || striker.overall_grade === "S"
 
           return (
             <motion.button
@@ -81,27 +103,23 @@ export function BLStrikerList({ strikers, selectedId, onSelect }: Props) {
               whileHover={{ scale: 1.005 }}
               className="w-full rounded-lg px-3 py-2.5 text-left transition-colors"
               style={{
-                background:  isSelected ? `${gradeColor}12` : "#060F26",
-                border:      isSelected
+                background: isSelected ? `${gradeColor}12` : "#060F26",
+                border:     isSelected
                   ? `1px solid ${gradeColor}`
                   : "1px solid #1e3a6a",
-                boxShadow:   isSelected && isElite
+                boxShadow:  isSelected && isElite
                   ? `0 0 14px ${gradeColor}22`
                   : undefined,
               }}
             >
               <div className="flex items-center justify-between gap-2">
-                {/* Left: flag + name + team */}
                 <div className="flex items-center gap-2 min-w-0">
-                  <span className="text-base shrink-0">
-                    {getFlag(striker.nationality)}
-                  </span>
+                  <span className="text-base shrink-0">{getFlag(striker.nationality)}</span>
                   <div className="min-w-0">
                     <div className="flex items-center gap-1.5">
                       <p className="font-display text-sm font-bold text-white truncate">
                         {shortName(striker.name)}
                       </p>
-                      {/* Overall grade badge */}
                       <span
                         className="shrink-0 inline-flex items-center justify-center rounded px-1 font-mono text-[9px] font-black"
                         style={{
@@ -120,14 +138,11 @@ export function BLStrikerList({ strikers, selectedId, onSelect }: Props) {
                   </div>
                 </div>
 
-                {/* Right: 6 tiny category grade badges */}
                 <div className="flex items-center gap-0.5 shrink-0">
                   {BL_CAT_META.map(cat => {
                     const gradeKey = `grade_${cat.key}` as keyof typeof striker.grades
                     const g = striker.grades[gradeKey] as LetterGrade
-                    return (
-                      <BLLetterGrade key={cat.key} grade={g} size="sm" />
-                    )
+                    return <BLLetterGrade key={cat.key} grade={g} size="sm" />
                   })}
                 </div>
               </div>
@@ -135,22 +150,31 @@ export function BLStrikerList({ strikers, selectedId, onSelect }: Props) {
           )
         })}
       </div>
+
+      {/* Pagination */}
+      <div
+        className="flex items-center justify-between px-4 py-3 border-t border-[#1e3a6a]"
+      >
+        <p className="font-mono text-[10px] text-[#6B7F9B]">
+          {sorted.length} strikers · page {currentPage}/{totalPages}
+        </p>
+        <div className="flex gap-1">
+          <button
+            onClick={() => setPage(p => Math.max(1, p - 1))}
+            disabled={currentPage === 1}
+            className="rounded px-2 py-1 text-xs text-[#6B7F9B] hover:text-[#00F0FF] disabled:opacity-30 transition-colors"
+          >
+            ‹
+          </button>
+          <button
+            onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+            disabled={currentPage === totalPages}
+            className="rounded px-2 py-1 text-xs text-[#6B7F9B] hover:text-[#00F0FF] disabled:opacity-30 transition-colors"
+          >
+            ›
+          </button>
+        </div>
+      </div>
     </div>
   )
-}
-
-// Helpers
-const FLAGS: Record<string, string> = {
-  France:"🇫🇷", Argentina:"🇦🇷", England:"🇬🇧", Portugal:"🇵🇹",
-  Brazil:"🇧🇷", Germany:"🇩🇪", Spain:"🇪🇸", Norway:"🇳🇴",
-  Egypt:"🇪🇬", Morocco:"🇲🇦", Senegal:"🇸🇳", Algeria:"🇩🇿",
-  Netherlands:"🇳🇱", Belgium:"🇧🇪", Uruguay:"🇺🇾", Colombia:"🇨🇴",
-  Mexico:"🇲🇽", Japan:"🇯🇵", Switzerland:"🇨🇭", Canada:"🇨🇦",
-  Croatia:"🇭🇷", Ecuador:"🇪🇨", Sweden:"🇸🇪", Poland:"🇵🇱",
-}
-function getFlag(n: string) { return FLAGS[n] ?? "🏳️" }
-function shortName(name: string) {
-  const parts = name.split(" ")
-  if (parts.length < 2 || name.length <= 14) return name
-  return `${parts[0][0]}. ${parts.slice(1).join(" ")}`
 }

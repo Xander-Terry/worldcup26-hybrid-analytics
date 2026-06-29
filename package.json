@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "data-refresh": "node refresh-pipeline.js"
   },
   "dependencies": {
     "@fontsource/dm-mono": "^5.2.7",

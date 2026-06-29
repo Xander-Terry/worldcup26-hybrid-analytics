@@ -1,26 +1,12 @@
 ﻿import { cn } from "@/lib/utils"
 import type { Position } from "@/lib/types"
+import { getFlag } from "@/lib/flags"
 
 const POSITION_STYLES: Record<Position, { bg: string; text: string }> = {
   FW: { bg: "#FEF2F2", text: "#DC2626" },
   MF: { bg: "#EFF6FF", text: "#2563EB" },
   DF: { bg: "#F0FDF4", text: "#16A34A" },
   GK: { bg: "#FEFCE8", text: "#CA8A04" },
-}
-
-const NATIONALITY_FLAGS: Record<string, string> = {
-  France:      "🇫🇷", Argentina: "🇦🇷", England:  "🇬🇧",
-  Portugal:    "🇵🇹", Brazil:    "🇧🇷", Germany:  "🇩🇪",
-  Spain:       "🇪🇸", Norway:    "🇳🇴", Egypt:    "🇪🇬",
-  Morocco:     "🇲🇦", Senegal:   "🇸🇳", Algeria:  "🇩🇿",
-  Netherlands: "🇳🇱", Belgium:   "🇧🇪", Uruguay:  "🇺🇾",
-  Colombia:    "🇨🇴", Mexico:    "🇲🇽", Japan:    "🇯🇵",
-  Switzerland: "🇨🇭", Canada:    "🇨🇦", Croatia:  "🇭🇷",
-  Ecuador:     "🇪🇨", Sweden:    "🇸🇪", Poland:   "🇵🇱",
-}
-
-function getFlag(nationality: string): string {
-  return NATIONALITY_FLAGS[nationality] ?? "🏳️"
 }
 
 type Props = {
@@ -39,7 +25,6 @@ export function PlayerAvatar({
   const isBL   = mode === "bluelock"
   const flag   = getFlag(nationality)
 
-  // Abbreviate long names for compact display
   const displayName = name.length > 18
     ? name.split(" ").map((w, i) => i === 0 ? w[0] + "." : w).join(" ")
     : name
@@ -61,8 +46,8 @@ export function PlayerAvatar({
           className="inline-block rounded px-1.5 py-0 text-[9px] font-bold leading-4 mt-0.5"
           style={{
             backgroundColor: isBL ? `${pos.text}22` : pos.bg,
-            color: isBL ? pos.text : pos.text,
-            border: isBL ? `1px solid ${pos.text}44` : "none",
+            color:           pos.text,
+            border:          isBL ? `1px solid ${pos.text}44` : "none",
           }}
         >
           {position}
