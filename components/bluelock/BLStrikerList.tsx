@@ -89,10 +89,10 @@ export function BLStrikerList({ strikers, selectedId, onSelect }: Props) {
           const isSelected = striker.id === selectedId
           const gradeColor = GRADE_COLORS[striker.overall_grade]
           const isElite    = striker.overall_grade === "S+" || striker.overall_grade === "S"
-          const glowShadow = `0 0 16px ${gradeColor}44`
 
           return (
-            <div className="relative rounded-lg group">
+            <div key={striker.id} className="relative rounded-lg group">
+
 
               {/* CONDITIONAL ELECTRIC + GLOW WRAPPER */}
               <div

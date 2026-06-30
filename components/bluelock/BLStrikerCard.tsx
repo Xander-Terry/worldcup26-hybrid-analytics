@@ -1,6 +1,5 @@
 ﻿"use client"
 
-
 import { motion } from "framer-motion"
 import { GRADE_COLORS, BL_CAT_META } from "@/lib/types"
 import type { BLStriker, LetterGrade } from "@/lib/types"
