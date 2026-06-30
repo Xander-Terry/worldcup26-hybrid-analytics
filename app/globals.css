@@ -33,6 +33,16 @@
     --radius:            0.5rem;
   }
 
+  #electricNoise {
+  animation: electricFlow 6s linear infinite;
+}
+
+@keyframes electricFlow {
+  0%   { base-frequency: 0.018; }
+  50%  { base-frequency: 0.022; }
+  100% { base-frequency: 0.018; }
+}
+
   /* ── Blue Lock Mode (dark) — applied via .bl-mode on <html> ── */
   .bl-mode {
     --background:        222 74% 9%;

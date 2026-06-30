@@ -1,6 +1,6 @@
 ﻿"use client"
 
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Users, Activity, Trophy } from "lucide-react"
 
@@ -19,7 +19,6 @@ import { BLStrikerCard }  from "@/components/bluelock/BLStrikerCard"
 import { BLEgoMap }       from "@/components/bluelock/BLEgoMap"
 import { BLBanner } from "@/components/bluelock/BLBanner"
 
-
 import type { GlobalPlayer, BLStriker } from "@/lib/types"
 import type { SummaryStats }            from "@/lib/actions/players"
 
@@ -36,7 +35,6 @@ export function DashboardClient({ globalPlayers, blStrikers, summary }: Props) {
   const [showOverlay,   setShowOverlay]  = useState(false)
   const hasEnteredBL                     = useRef(false)
 
-  // Selected players
   const [selectedPlayer,  setSelectedPlayer]  = useState<GlobalPlayer | null>(
     globalPlayers[0] ?? null
   )
@@ -45,14 +43,12 @@ export function DashboardClient({ globalPlayers, blStrikers, summary }: Props) {
     blStrikers[0] ?? null
   )
 
-  // Advanced tab for global mode
   const [advancedTab, setAdvancedTab] = useState<"clusters" | "compare">("clusters")
 
   function handleModeChange(newMode: Mode) {
     if (newMode === mode) return
 
     if (newMode === "bluelock" && !hasEnteredBL.current) {
-      // First BL entry — cinematic transition
       hasEnteredBL.current = true
       setShowOverlay(true)
       setTimeout(() => setMode("bluelock"), 500)
@@ -64,7 +60,32 @@ export function DashboardClient({ globalPlayers, blStrikers, summary }: Props) {
 
   const isGlobal = mode === "global"
 
+  const listRef = useRef<HTMLDivElement | null>(null)
+
+  function handleSelect(striker: BLStriker) {
+    setSelectedStriker(striker)
+  }
+
+  useEffect(() => {
+    function onDocClick(e: MouseEvent) {
+      if (!listRef.current) return
+      if (!listRef.current.contains(e.target as Node)) {
+        setSelectedStriker(null)
+      }
+    }
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setSelectedStriker(null)
+    }
+    document.addEventListener("mousedown", onDocClick)
+    document.addEventListener("keydown", onKey)
+    return () => {
+      document.removeEventListener("mousedown", onDocClick)
+      document.removeEventListener("keydown", onKey)
+    }
+  }, [])
+
   return (
+
     <>
       <TransitionOverlay show={showOverlay} />
 
@@ -244,6 +265,8 @@ export function DashboardClient({ globalPlayers, blStrikers, summary }: Props) {
               </motion.div>
             )}
 
+
+
             {/* ── BLUE LOCK MODE ─────────────────────────────────────── */}
             {!isGlobal && (
               <motion.div
@@ -254,17 +277,20 @@ export function DashboardClient({ globalPlayers, blStrikers, summary }: Props) {
                 transition={{ duration: 0.22 }}
                 className="space-y-6"
               >
-              
-              <BLBanner strikers={blStrikers}/>
+                <BLBanner strikers={blStrikers} />
+
+                {/* Parent selection state and click-away ref */}
+                {/* Put these hooks near the top of the component function (not inside JSX) */}
+                {/* Example shown below in the "Parent hooks" section */}
 
                 {/* Main content - striker list + card */}
-                <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+                <div ref={listRef} className="grid grid-cols-1 lg:grid-cols-5 gap-6">
                   {/* Striker list (2/5) */}
                   <div className="lg:col-span-2 min-h-[500px]">
                     <BLStrikerList
                       strikers={blStrikers}
                       selectedId={selectedStriker?.id}
-                      onSelect={setSelectedStriker}
+                      onSelect={handleSelect}         // <-- use wrapper handler
                     />
                   </div>
 
@@ -278,10 +304,11 @@ export function DashboardClient({ globalPlayers, blStrikers, summary }: Props) {
                 <BLEgoMap
                   strikers={blStrikers}
                   selectedId={selectedStriker?.id}
-                  onSelect={setSelectedStriker}
+                  onSelect={handleSelect}
                 />
               </motion.div>
             )}
+
           </AnimatePresence>
 
         </div>

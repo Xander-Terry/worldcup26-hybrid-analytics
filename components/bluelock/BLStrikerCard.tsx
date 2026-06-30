@@ -1,5 +1,6 @@
 ﻿"use client"
 
+
 import { motion } from "framer-motion"
 import { GRADE_COLORS, BL_CAT_META } from "@/lib/types"
 import type { BLStriker, LetterGrade } from "@/lib/types"
@@ -47,6 +48,7 @@ export function BLStrikerCard({ striker }: Props) {
   ]
 
   return (
+
     <motion.div
       className="flex flex-col gap-4 rounded-xl p-4"
       style={{ background: "#060F26", border: "1px solid #0E1D3D" }}

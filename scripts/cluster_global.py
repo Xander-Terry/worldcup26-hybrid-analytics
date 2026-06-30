@@ -31,7 +31,7 @@ if not SUPABASE_URL or not SUPABASE_KEY:
 
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-# â”€â”€ Config â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# -- Config --------------------------------------------------------------------
 K = 6
 RANDOM_STATE = 42
 UMAP_NEIGHBORS = 15
@@ -47,7 +47,7 @@ AXIS_COLS = [
     "physical_impact",
 ]
 
-# Update these AFTER first run â€” inspect centroid printout to label clusters
+# Update these AFTER first run - inspect centroid printout to label clusters
 # Keys are cluster IDs 0-5, values are the archetype names
 ARCHETYPE_LABELS = {
     0: "Box Threat",
@@ -58,10 +58,10 @@ ARCHETYPE_LABELS = {
     5: "Defensive Shield",
 }
 
-# â”€â”€ Load from Supabase â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# -- Load from Supabase --------------------------------------------------------
 print("\n[1/5] Loading player_stats_global from Supabase...")
 
-# Supabase returns max 1000 rows per request â€” paginate
+# Supabase returns max 1000 rows per request - paginate
 all_rows = []
 page = 0
 page_size = 1000
@@ -91,13 +91,13 @@ if len(df) < K:
     print(f"ERROR: Not enough players ({len(df)}) for k={K} clusters")
     sys.exit(1)
 
-# â”€â”€ Scale â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# -- Scale ---------------------------------------------------------------------
 print("\n[2/5] Scaling features...")
 X = df[AXIS_COLS].values
 scaler = StandardScaler()
 X_scaled = scaler.fit_transform(X)
 
-# â”€â”€ K-means â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# -- K-means -------------------------------------------------------------------
 print(f"\n[3/5] Running K-means (k={K})...")
 kmeans = KMeans(n_clusters=K, random_state=RANDOM_STATE, n_init=20)
 cluster_ids = kmeans.fit_predict(X_scaled)
@@ -107,7 +107,7 @@ sil = silhouette_score(X_scaled, cluster_ids)
 print(f"  Silhouette score: {sil:.4f}  (> 0.2 is acceptable)")
 
 # Print centroids so you can assign meaningful archetype labels
-print("\n  Cluster centroids (original scale â€” higher = stronger on that axis):")
+print("\n  Cluster centroids (original scale - higher = stronger on that axis):")
 centroids_original = scaler.inverse_transform(kmeans.cluster_centers_)
 centroid_df = pd.DataFrame(centroids_original, columns=AXIS_COLS)
 centroid_df.index.name = "cluster_id"
@@ -118,7 +118,7 @@ for cid, count in pd.Series(cluster_ids).value_counts().sort_index().items():
     label = ARCHETYPE_LABELS.get(cid, f"Cluster {cid}")
     print(f"  Cluster {cid} ({label}): {count} players")
 
-# â”€â”€ UMAP â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# -- UMAP ----------------------------------------------------------------------
 print(f"\n[4/5] Running UMAP (neighbors={UMAP_NEIGHBORS}, min_dist={UMAP_MIN_DIST})...")
 reducer = umap.UMAP(
     n_components=2,
@@ -131,10 +131,10 @@ df["umap_x"] = embedding[:, 0]
 df["umap_y"] = embedding[:, 1]
 
 print(f"  UMAP complete")
-print(f"  umap_x range: {df['umap_x'].min():.2f} â€“ {df['umap_x'].max():.2f}")
-print(f"  umap_y range: {df['umap_y'].min():.2f} â€“ {df['umap_y'].max():.2f}")
+print(f"  umap_x range: {df['umap_x'].min():.2f} - {df['umap_x'].max():.2f}")
+print(f"  umap_y range: {df['umap_y'].min():.2f} - {df['umap_y'].max():.2f}")
 
-# â”€â”€ Upsert to Supabase â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# -- Upsert to Supabase --------------------------------------------------------
 print("\n[5/5] Upserting cluster_results_global...")
 df["archetype_label"] = df["cluster_id"].map(ARCHETYPE_LABELS).fillna("Unknown")
 
@@ -153,7 +153,7 @@ for i in range(0, len(records), 100):
     supabase.table("cluster_results_global").upsert(
         chunk, on_conflict="player_id"
     ).execute()
-    print(f"  cluster_results_global: {i+1}â€“{min(i+100, len(records))}")
+    print(f"  cluster_results_global: {i+1}-{min(i+100, len(records))}")
 
 print(f"""
 âœ… Global clustering complete!

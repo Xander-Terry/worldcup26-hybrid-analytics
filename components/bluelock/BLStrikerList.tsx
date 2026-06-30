@@ -89,54 +89,102 @@ export function BLStrikerList({ strikers, selectedId, onSelect }: Props) {
           const isSelected = striker.id === selectedId
           const gradeColor = GRADE_COLORS[striker.overall_grade]
           const isElite    = striker.overall_grade === "S+" || striker.overall_grade === "S"
+          const glowShadow = `0 0 16px ${gradeColor}44`
 
           return (
-            <motion.button
-              key={striker.id}
-              onClick={() => onSelect(striker)}
-              whileHover={{ scale: 1.005 }}
-              transition={{ duration: 0.15 }}
-              className="w-full rounded-lg px-3 py-2.5 text-left transition-all duration-150 hover:shadow-[0_0_16px_#00F0FF55]"
-              style={{
-                background: isSelected ? `${gradeColor}12` : "#060F26",
-                border:     isSelected ? `1px solid ${gradeColor}` : "1px solid #1e3a6a",
-                boxShadow:  isSelected && isElite ? `0 0 14px ${gradeColor}22` : undefined,
-              }}
+            <div className="relative rounded-lg group">
 
-            >
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2 min-w-0">
-                  <span className="text-base shrink-0">{getFlag(striker.nationality)}</span>
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-1.5">
-                      <p className="font-display text-sm font-bold text-white truncate">
-                        {shortName(striker.name)}
-                      </p>
-                      <span
-                        className="shrink-0 inline-flex items-center justify-center rounded px-1 font-mono text-[9px] font-black"
-                        style={{
-                          color:           gradeColor,
-                          backgroundColor: `${gradeColor}1a`,
-                          border:          `1px solid ${gradeColor}44`,
-                          boxShadow:       isElite ? `0 0 6px ${gradeColor}99` : undefined,
-                        }}
-                      >
-                        {striker.overall_grade}
-                      </span>
+              {/* CONDITIONAL ELECTRIC + GLOW WRAPPER */}
+              <div
+                className={`
+                  absolute inset-0 rounded-lg pointer-events-none z-[3]
+                  transition-opacity duration-200
+                  ${isSelected ? "opacity-100" : "opacity-0 group-hover:opacity-100"}
+                `}
+              >
+                {/* Electric animated border */}
+                <div
+                  className="absolute inset-0 rounded-lg border-2"
+                  style={{
+                    borderColor: gradeColor,
+                    filter: "url(#bl-electric-border)",
+                  }}
+                />
+
+                {/* Fog glow layers */}
+                <div
+                  className="absolute inset-0 rounded-lg border-2"
+                  style={{
+                    borderColor: `${gradeColor}cc`,
+                    filter: "blur(6px)",
+                    opacity: 0.55,
+                  }}
+                />
+                <div
+                  className="absolute inset-0 rounded-lg border-2"
+                  style={{
+                    borderColor: `${gradeColor}aa`,
+                    filter: "blur(14px)",
+                    opacity: 0.40,
+                  }}
+                />
+                <div
+                  className="absolute inset-0 rounded-lg border-2"
+                  style={{
+                    borderColor: `${gradeColor}66`,
+                    filter: "blur(25px)",
+                    opacity: 0.40,
+                  }}
+                />
+              </div>
+
+              {/* ACTUAL CARD CONTENT */}
+              <motion.button
+                key={striker.id}
+                onClick={() => onSelect(striker)}
+                whileHover={{ scale: 1.01 }}
+                className="w-full rounded-lg text-left bg-[#060F26] border px-3 py-2.5 z-[1]"
+                style={{
+                  borderColor: isSelected ? gradeColor : "#1e3a6a",
+                  background: isSelected ? `${gradeColor}12` : "#060F26",
+                }}
+              >
+
+                {/* your existing content stays EXACTLY the same */}
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="text-base shrink-0">{getFlag(striker.nationality)}</span>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <p className="font-display text-sm font-bold text-white truncate">
+                          {shortName(striker.name)}
+                        </p>
+                        <span
+                          className="shrink-0 inline-flex items-center justify-center rounded px-1 font-mono text-[9px] font-black"
+                          style={{
+                            color:           gradeColor,
+                            backgroundColor: `${gradeColor}1a`,
+                            border:          `1px solid ${gradeColor}44`,
+                            boxShadow:       isElite ? `0 0 6px ${gradeColor}99` : undefined,
+                          }}
+                        >
+                          {striker.overall_grade}
+                        </span>
+                      </div>
+                      <p className="font-mono text-[9px] text-[#6B7F9B] truncate">{striker.team}</p>
                     </div>
-                    <p className="font-mono text-[9px] text-[#6B7F9B] truncate">{striker.team}</p>
+                  </div>
+
+                  <div className="flex items-center gap-0.5 shrink-0">
+                    {BL_CAT_META.map(cat => {
+                      const gradeKey = `grade_${cat.key}` as keyof typeof striker.grades
+                      const g = striker.grades[gradeKey] as LetterGrade
+                      return <BLLetterGrade key={cat.key} grade={g} size="sm" />
+                    })}
                   </div>
                 </div>
-
-                <div className="flex items-center gap-0.5 shrink-0">
-                  {BL_CAT_META.map(cat => {
-                    const gradeKey = `grade_${cat.key}` as keyof typeof striker.grades
-                    const g = striker.grades[gradeKey] as LetterGrade
-                    return <BLLetterGrade key={cat.key} grade={g} size="sm" />
-                  })}
-                </div>
-              </div>
-            </motion.button>
+              </motion.button>
+            </div>
           )
         })}
       </div>
