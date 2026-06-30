@@ -1,0 +1,7 @@
+﻿{
+  "functions": {
+    "app/dashboard/page.tsx": {
+      "maxDuration": 30
+    }
+  }
+}
