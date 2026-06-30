@@ -17,6 +17,8 @@ import { PlayerCompare }       from "@/components/global/PlayerCompare"
 import { BLStrikerList }  from "@/components/bluelock/BLStrikerList"
 import { BLStrikerCard }  from "@/components/bluelock/BLStrikerCard"
 import { BLEgoMap }       from "@/components/bluelock/BLEgoMap"
+import { BLBanner } from "@/components/bluelock/BLBanner"
+
 
 import type { GlobalPlayer, BLStriker } from "@/lib/types"
 import type { SummaryStats }            from "@/lib/actions/players"
@@ -252,54 +254,10 @@ export function DashboardClient({ globalPlayers, blStrikers, summary }: Props) {
                 transition={{ duration: 0.22 }}
                 className="space-y-6"
               >
-                {/* BL Banner header */}
-                <div
-                  className="relative overflow-hidden rounded-xl p-6"
-                  style={{
-                    background:
-                      "linear-gradient(135deg, #0F53D6 0%, #060F26 55%, #0E1D3D 100%)",
-                    border:    "1px solid #0F53D666",
-                    boxShadow: "0 0 40px #0F53D618",
-                  }}
-                >
-                  <div className="absolute inset-0 bl-crosshatch pointer-events-none" />
-                  <div className="relative flex items-center justify-between gap-6">
-                    <div>
-                      <h2
-                        className="font-display text-3xl font-black uppercase text-white"
-                        style={{ textShadow: "0 0 24px #00F0FF2a" }}
-                      >
-                        Blue Lock Striker Analysis
-                      </h2>
-                      <p className="font-mono text-sm text-[#6B7F9B] mt-1">
-                        World Cup 2026 — Ego Ratings & Style Mapping
-                      </p>
-                    </div>
+              
+              <BLBanner strikers={blStrikers}/>
 
-                    {/* Grade distribution bar */}
-                    <div className="hidden sm:flex items-end gap-1.5 shrink-0">
-                      {gradeDistribution(blStrikers).map(({ grade, count, color }) => (
-                        <div key={grade} className="flex flex-col items-center gap-1">
-                          <span className="font-mono text-[9px]" style={{ color }}>
-                            {count}
-                          </span>
-                          <div
-                            className="w-5 rounded-t"
-                            style={{
-                              height:     `${Math.max(count * 14, 4)}px`,
-                              background: `${color}cc`,
-                            }}
-                          />
-                          <span className="font-mono text-[8px]" style={{ color }}>
-                            {grade}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Main content — striker list + card */}
+                {/* Main content - striker list + card */}
                 <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
                   {/* Striker list (2/5) */}
                   <div className="lg:col-span-2 min-h-[500px]">
@@ -331,20 +289,3 @@ export function DashboardClient({ globalPlayers, blStrikers, summary }: Props) {
     </>
   )
 }
-
-// Grade distribution for the BL banner bar chart
-function gradeDistribution(strikers: BLStriker[]) {
-  const GRADE_COLORS_LOCAL: Record<string, string> = {
-    "S+":"#ffd700","S":"#c084fc","A":"#60a5fa","B":"#4ade80",
-    "C":"#facc15","D":"#fb923c","E":"#f87171","F":"#94a3b8","G":"#475569",
-  }
-  const ORDER = ["S+","S","A","B","C","D","E","F","G"]
-  const counts: Record<string, number> = {}
-  strikers.forEach(s => {
-    counts[s.overall_grade] = (counts[s.overall_grade] ?? 0) + 1
-  })
-  return ORDER
-    .filter(g => counts[g] > 0)
-    .map(g => ({ grade: g, count: counts[g], color: GRADE_COLORS_LOCAL[g] }))
-}
-

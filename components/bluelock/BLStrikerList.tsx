@@ -47,12 +47,9 @@ export function BLStrikerList({ strikers, selectedId, onSelect }: Props) {
     [strikers, sortKey]
   )
 
-  const totalPages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE))
+  const totalPages  = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE))
   const currentPage = Math.min(page, totalPages)
-  const pageRows    = sorted.slice(
-    (currentPage - 1) * PAGE_SIZE,
-    currentPage * PAGE_SIZE
-  )
+  const pageRows    = sorted.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
 
   function handleSort(key: SortKey) {
     setSortKey(key)
@@ -61,14 +58,12 @@ export function BLStrikerList({ strikers, selectedId, onSelect }: Props) {
 
   return (
     <div className="flex h-full flex-col rounded-xl border border-[#1e3a6a] bg-[#0E1D3D] overflow-hidden">
-      {/* Header */}
       <div className="px-4 pt-4 pb-3 border-b border-[#1e3a6a]">
         <p className="font-display text-xs font-bold uppercase tracking-widest text-white">
           Striker Roster
         </p>
       </div>
 
-      {/* Sort strip */}
       <div className="flex items-center gap-1 px-3 py-2 border-b border-[#1e3a6a] overflow-x-auto no-scrollbar">
         {SORT_LABELS.map(({ key, label }) => {
           const active = key === sortKey
@@ -89,7 +84,6 @@ export function BLStrikerList({ strikers, selectedId, onSelect }: Props) {
         })}
       </div>
 
-      {/* Roster rows — fixed height scrollable area */}
       <div className="flex-1 overflow-y-auto no-scrollbar px-2 py-2 space-y-1 min-h-0">
         {pageRows.map((striker) => {
           const isSelected = striker.id === selectedId
@@ -101,16 +95,14 @@ export function BLStrikerList({ strikers, selectedId, onSelect }: Props) {
               key={striker.id}
               onClick={() => onSelect(striker)}
               whileHover={{ scale: 1.005 }}
-              className="w-full rounded-lg px-3 py-2.5 text-left transition-colors"
+              transition={{ duration: 0.15 }}
+              className="w-full rounded-lg px-3 py-2.5 text-left transition-all duration-150 hover:shadow-[0_0_16px_#00F0FF55]"
               style={{
                 background: isSelected ? `${gradeColor}12` : "#060F26",
-                border:     isSelected
-                  ? `1px solid ${gradeColor}`
-                  : "1px solid #1e3a6a",
-                boxShadow:  isSelected && isElite
-                  ? `0 0 14px ${gradeColor}22`
-                  : undefined,
+                border:     isSelected ? `1px solid ${gradeColor}` : "1px solid #1e3a6a",
+                boxShadow:  isSelected && isElite ? `0 0 14px ${gradeColor}22` : undefined,
               }}
+
             >
               <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2 min-w-0">
@@ -132,9 +124,7 @@ export function BLStrikerList({ strikers, selectedId, onSelect }: Props) {
                         {striker.overall_grade}
                       </span>
                     </div>
-                    <p className="font-mono text-[9px] text-[#6B7F9B] truncate">
-                      {striker.team}
-                    </p>
+                    <p className="font-mono text-[9px] text-[#6B7F9B] truncate">{striker.team}</p>
                   </div>
                 </div>
 
@@ -151,10 +141,7 @@ export function BLStrikerList({ strikers, selectedId, onSelect }: Props) {
         })}
       </div>
 
-      {/* Pagination */}
-      <div
-        className="flex items-center justify-between px-4 py-3 border-t border-[#1e3a6a]"
-      >
+      <div className="flex items-center justify-between px-4 py-3 border-t border-[#1e3a6a]">
         <p className="font-mono text-[10px] text-[#6B7F9B]">
           {sorted.length} strikers · page {currentPage}/{totalPages}
         </p>
