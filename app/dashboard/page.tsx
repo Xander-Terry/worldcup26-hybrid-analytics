@@ -4,8 +4,10 @@ import { DashboardClient } from "./DashboardClient"
 import { LeaderboardSkeleton } from "@/components/shared/LoadingSkeleton"
 
 export default async function DashboardPage() {
+  console.log("🔍 RAW SUPABASE_URL:", JSON.stringify(process.env.SUPABASE_URL));
+  console.log("🔍 RAW SUPABASE_KEY:", JSON.stringify(process.env.SUPABASE_ANON_KEY));
+
   console.log("🏁 1. Dashboard Page Render Triggered...")
-  console.log("RAW URL:", JSON.stringify(process.env.SUPABASE_URL));
 
   try {
     console.log("📡 2. Fetching Global Players...")
