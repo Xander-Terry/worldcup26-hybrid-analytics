@@ -1,11 +1,14 @@
 ﻿"use server"
 
-import { createClient } from "@/lib/supabase/server"
+import { supabase } from "@/lib/supabase/server"
 import type { GlobalPlayer, BLStriker, LetterGrade } from "@/lib/types"
 
 // ── Supabase join row shapes ──────────────────────────────────────────────────
 
 type GlobalStatsRow = {
+  minutes:             number
+  goals:               number
+  assists:             number
   attacking_threat:    number
   chance_creation:     number
   ball_progression:    number
@@ -54,8 +57,6 @@ type ClusterBLRow = {
 // ── Global Mode ───────────────────────────────────────────────────────────────
 
 export async function getGlobalPlayers(): Promise<GlobalPlayer[]> {
-  const supabase = await createClient()
-
   const { data, error } = await supabase
     .from("players")
     .select(`
@@ -63,12 +64,10 @@ export async function getGlobalPlayers(): Promise<GlobalPlayer[]> {
       name,
       team,
       position,
-      player_stats_raw (
+      player_stats_global (
         minutes,
         goals,
-        assists
-      ),
-      player_stats_global (
+        assists,
         attacking_threat,
         chance_creation,
         ball_progression,
@@ -87,24 +86,15 @@ export async function getGlobalPlayers(): Promise<GlobalPlayer[]> {
     .order("name")
 
   if (error) {
-    console.error("getGlobalPlayers error:", error)
+    console.error("getGlobalPlayers error:", error.message)
     return []
   }
 
   return (data ?? [])
     .filter((p) => p.player_stats_global && p.cluster_results_global)
     .map((p) => {
-      // Unpack Supabase relationship arrays safely
-      const rawArray = p.player_stats_raw as unknown as RawStatsRow[] | RawStatsRow | null
-      const raw = Array.isArray(rawArray) ? rawArray[0] : rawArray
-
-      const statsArray = p.player_stats_global as unknown as GlobalStatsRow[] | GlobalStatsRow | null
-      const stats = Array.isArray(statsArray) ? statsArray[0] : statsArray
-
-      const clusterArray = p.cluster_results_global as unknown as ClusterGlobalRow[] | ClusterGlobalRow | null
-      const cluster = Array.isArray(clusterArray) ? clusterArray[0] : clusterArray
-
-      if (!stats || !cluster) return null;
+      const stats   = p.player_stats_global as unknown as GlobalStatsRow
+      const cluster = p.cluster_results_global as unknown as ClusterGlobalRow
 
       return {
         id:          p.id,
@@ -112,9 +102,9 @@ export async function getGlobalPlayers(): Promise<GlobalPlayer[]> {
         team:        p.team,
         nationality: p.team,
         position:    p.position as GlobalPlayer["position"],
-        goals:       raw?.goals   ?? 0,
-        assists:     raw?.assists ?? 0,
-        minutes:     raw?.minutes ?? 0,
+        goals:       stats.goals   ?? 0,
+        assists:     stats.assists ?? 0,
+        minutes:     stats.minutes ?? 0,
         axes: {
           attacking_threat:    stats.attacking_threat    ?? 0,
           chance_creation:     stats.chance_creation     ?? 0,
@@ -127,16 +117,13 @@ export async function getGlobalPlayers(): Promise<GlobalPlayer[]> {
         archetype_label: cluster.archetype_label,
         umap_x:          cluster.umap_x,
         umap_y:          cluster.umap_y,
-      } as GlobalPlayer
+      } satisfies GlobalPlayer
     })
-    .filter(Boolean) as GlobalPlayer[]
 }
 
 // ── Blue Lock Mode ────────────────────────────────────────────────────────────
 
 export async function getBLStrikers(): Promise<BLStriker[]> {
-  const supabase = await createClient()
-
   const { data, error } = await supabase
     .from("players")
     .select(`
@@ -164,64 +151,51 @@ export async function getBLStrikers(): Promise<BLStriker[]> {
     .eq("position", "FW")
 
   if (error) {
-    console.error("getBLStrikers error:", error)
+    console.error("getBLStrikers error:", error.message)
     return []
   }
 
-  return (
-    (data ?? [])
-      .filter((p) => p.player_stats_bluelock && p.cluster_results_bluelock)
-      .map((p) => {
-        const blArray = p.player_stats_bluelock as BLStatsRow[] | BLStatsRow | null
-        const bl = Array.isArray(blArray) ? blArray[0] : blArray
+  return (data ?? [])
+    .filter((p) => p.player_stats_bluelock && p.cluster_results_bluelock)
+    .map((p) => {
+      const bl      = p.player_stats_bluelock as unknown as BLStatsRow
+      const raw     = p.player_stats_raw      as unknown as RawStatsRow | null
+      const cluster = p.cluster_results_bluelock as unknown as ClusterBLRow
 
-        const rawArray = p.player_stats_raw as RawStatsRow[] | RawStatsRow | null
-        const raw = Array.isArray(rawArray) ? rawArray[0] : rawArray
-
-        const clusterArray = p.cluster_results_bluelock as ClusterBLRow[] | ClusterBLRow | null
-        const cluster = Array.isArray(clusterArray) ? clusterArray[0] : clusterArray
-
-        if (!bl || !cluster) return null
-
-        return {
-          id:          p.id,
-          name:        p.name,
-          team:        p.team,
-          nationality: p.team,
-          categories: {
-            shoot:   bl.shoot   ?? 0,
-            offense: bl.offense ?? 0,
-            dribble: bl.dribble ?? 0,
-            pass:    bl.pass    ?? 0,
-            speed:   bl.speed   ?? 0,
-            defense: bl.defense ?? 0,
-          },
-          grades: {
-            grade_shoot:   bl.grade_shoot   as LetterGrade,
-            grade_offense: bl.grade_offense as LetterGrade,
-            grade_dribble: bl.grade_dribble as LetterGrade,
-            grade_pass:    bl.grade_pass    as LetterGrade,
-            grade_speed:   bl.grade_speed   as LetterGrade,
-            grade_defense: bl.grade_defense as LetterGrade,
-          },
-          overall_score:   bl.overall_score   ?? 0,
-          overall_grade:   bl.overall_grade   as LetterGrade,
-          ego_x:           bl.ego_x           ?? 50,
-          ego_y:           bl.ego_y           ?? 50,
-          cluster_id:      cluster.cluster_id,
-          archetype_label: cluster.archetype_label,
-          goals:           raw?.goals   ?? 0,
-          assists:         raw?.assists ?? 0,
-          minutes:         raw?.minutes ?? 0,
-        }
-      })
-      // Type‑narrowing filter — removes nulls AND tells TS they are gone
-      .filter((p): p is BLStriker => p !== null)
-      .sort((a, b) => b.overall_score - a.overall_score)
-  )
+      return {
+        id:          p.id,
+        name:        p.name,
+        team:        p.team,
+        nationality: p.team,
+        categories: {
+          shoot:   bl.shoot   ?? 0,
+          offense: bl.offense ?? 0,
+          dribble: bl.dribble ?? 0,
+          pass:    bl.pass    ?? 0,
+          speed:   bl.speed   ?? 0,
+          defense: bl.defense ?? 0,
+        },
+        grades: {
+          grade_shoot:   bl.grade_shoot   as LetterGrade,
+          grade_offense: bl.grade_offense as LetterGrade,
+          grade_dribble: bl.grade_dribble as LetterGrade,
+          grade_pass:    bl.grade_pass    as LetterGrade,
+          grade_speed:   bl.grade_speed   as LetterGrade,
+          grade_defense: bl.grade_defense as LetterGrade,
+        },
+        overall_score:   bl.overall_score   ?? 0,
+        overall_grade:   bl.overall_grade   as LetterGrade,
+        ego_x:           bl.ego_x           ?? 50,
+        ego_y:           bl.ego_y           ?? 50,
+        cluster_id:      cluster.cluster_id,
+        archetype_label: cluster.archetype_label,
+        goals:           raw?.goals   ?? 0,
+        assists:         raw?.assists ?? 0,
+        minutes:         raw?.minutes ?? 0,
+      } satisfies BLStriker
+    })
+    .sort((a, b) => b.overall_score - a.overall_score)
 }
-
-
 
 // ── Summary stats ─────────────────────────────────────────────────────────────
 
@@ -237,8 +211,6 @@ export type SummaryStats = {
 }
 
 export async function getSummaryStats(): Promise<SummaryStats> {
-  const supabase = await createClient()
-
   const { count: playerCount } = await supabase
     .from("players")
     .select("id", { count: "exact", head: true })
@@ -249,22 +221,22 @@ export async function getSummaryStats(): Promise<SummaryStats> {
     .select("player_id, goals, assists")
     .order("goals", { ascending: false })
     .limit(1)
+    .single()
 
   let topScorer = null
-  if (topScorerData && topScorerData.length > 0) {
-    const mainScorer = topScorerData[0]
+  if (topScorerData) {
     const { data: topPlayer } = await supabase
       .from("players")
       .select("name, team")
-      .eq("id", mainScorer.player_id)
-      .maybeSingle()
+      .eq("id", topScorerData.player_id)
+      .single()
 
     if (topPlayer) {
       topScorer = {
         name:    topPlayer.name,
         team:    topPlayer.team,
-        goals:   mainScorer.goals,
-        assists: mainScorer.assists,
+        goals:   topScorerData.goals,
+        assists: topScorerData.assists,
       }
     }
   }
