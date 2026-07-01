@@ -1,6 +1,7 @@
 ﻿"use server"
 
-import { supabase } from "@/lib/supabase/server"
+
+import { createClient } from "@/lib/supabase/client"
 import type { GlobalPlayer, BLStriker, LetterGrade } from "@/lib/types"
 
 // ── Supabase join row shapes ──────────────────────────────────────────────────
@@ -57,7 +58,9 @@ type ClusterBLRow = {
 // ── Global Mode ───────────────────────────────────────────────────────────────
 
 export async function getGlobalPlayers(): Promise<GlobalPlayer[]> {
-    console.log("GETTING GLOBAL PLAYER...");
+  console.log("GETTING GLOBAL PLAYER...");
+  
+  const supabase = createClient()
   
   const { data, error } = await supabase
     .from("players")
@@ -126,6 +129,9 @@ export async function getGlobalPlayers(): Promise<GlobalPlayer[]> {
 // ── Blue Lock Mode ────────────────────────────────────────────────────────────
 
 export async function getBLStrikers(): Promise<BLStriker[]> {
+
+  const supabase = createClient()
+
   const { data, error } = await supabase
     .from("players")
     .select(`
@@ -213,6 +219,9 @@ export type SummaryStats = {
 }
 
 export async function getSummaryStats(): Promise<SummaryStats> {
+
+  const supabase = createClient()
+
   const { count: playerCount } = await supabase
     .from("players")
     .select("id", { count: "exact", head: true })

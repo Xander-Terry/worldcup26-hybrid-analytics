@@ -4,8 +4,9 @@ import { cookies } from 'next/headers'
 export function createClient() {
   const cookieStore = cookies()
   
-  const supabaseUrl = process.env.SUPABASE_URL
-  const supabaseAnonKey = process.env.SUPABASE_ANON_KEY
+  const supabaseUrl = process.env.SUPABASE_URL?.trim()
+  const supabaseAnonKey = process.env.SUPABASE_ANON_KEY?.trim()
+
 
   // 🔍 Debug logs
   console.log("🔍 RAW SUPABASE_URL:", JSON.stringify(supabaseUrl))
