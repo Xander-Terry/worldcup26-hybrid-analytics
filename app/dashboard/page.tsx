@@ -5,6 +5,7 @@ import { LeaderboardSkeleton } from "@/components/shared/LoadingSkeleton"
 
 export default async function DashboardPage() {
   console.log("🏁 1. Dashboard Page Render Triggered...")
+  console.log("RAW URL:", JSON.stringify(process.env.SUPABASE_URL));
 
   try {
     console.log("📡 2. Fetching Global Players...")
