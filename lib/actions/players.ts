@@ -1,27 +1,22 @@
-﻿"use server"
+﻿// 1. ❌ REMOVE "use server" from the top. Leave it completely blank or use "use client"
 
 import { createClient } from "@supabase/supabase-js"
 import type { GlobalPlayer, BLStriker, LetterGrade } from "@/lib/types"
 
-// Pull environment variables safely (checking both variations just in case)
-const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL
-const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+// 2. Use the exact variables Vercel is printing out
+const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || ""
+const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ""
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  console.error("❌ CRITICAL: Supabase credentials are completely missing on Vercel's environment variables!")
+// 3. Initialize a bare-bones client with zero auth/cookie dependencies
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    persistSession: false,
+    autoRefreshToken: false,
+    detectSessionInUrl: false
+  }
 }
 
-// Fallback to a placeholder string to prevent "Invalid URL" crash, letting the app build cleanly
-const supabase = createClient(
-  supabaseUrl || "https://placeholder-url-for-builds.supabase.co",
-  supabaseAnonKey || "placeholder_key",
-  {
-    auth: {
-      persistSession: false,
-      autoRefreshToken: false,
-      detectSessionInUrl: false,
-    },
-  }
+// Keep all your type definitions and functions (getGlobalPlayers, getBLStrikers) exactly as they are below!
 )
 
 type GlobalStatsRow = {
