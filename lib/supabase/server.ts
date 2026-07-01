@@ -22,7 +22,7 @@ export const supabase = createServerClient(
         const cookieStore = cookies()
         try {
           cookieStore.set({ name, value, ...options })
-        } catch (error) {
+        } catch {
           // Handled for server component rendering phases
         }
       },
@@ -30,7 +30,7 @@ export const supabase = createServerClient(
         const cookieStore = cookies()
         try {
           cookieStore.set({ name: name, value: '', ...options })
-        } catch (error) {
+        } catch {
           // Handled for server component rendering phases
         }
       },

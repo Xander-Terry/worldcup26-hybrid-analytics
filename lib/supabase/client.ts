@@ -7,12 +7,26 @@ export function createClient() {
   const supabaseUrl = process.env.SUPABASE_URL
   const supabaseAnonKey = process.env.SUPABASE_ANON_KEY
 
-  // Safe fallback to prevent the app from throwing a cryptic, un-loggable error
+  // 🔍 Debug logs
+  console.log("🔍 RAW SUPABASE_URL:", JSON.stringify(supabaseUrl))
+  console.log("🔍 RAW SUPABASE_ANON_KEY:", JSON.stringify(supabaseAnonKey))
+
   if (!supabaseUrl || !supabaseAnonKey || !supabaseUrl.startsWith('http')) {
     console.error("❌ CRITICAL: Supabase Environment Variables are missing on Vercel's Server Side!")
-    // Returns a dummy client layout so the page rendering engine doesn't snap
     return createServerClient('https://placeholder-url-for-builds.supabase.co', 'placeholder', {
-      cookies: { get() {}, set() {}, remove() {} }
+      cookies: {
+        get() {
+          return null
+        },
+        set() {
+          // no-op
+        },
+        remove() {
+          // no-op
+        }
+
+      }
+
     })
   }
 
@@ -27,14 +41,14 @@ export function createClient() {
         set(name, value, options) {
           try {
             cookieStore.set({ name, value, ...options })
-          } catch (error) {
+          } catch {
             // Server Components sometimes throw when attempting to set cookies during render layout
           }
         },
         remove(name, options) {
           try {
             cookieStore.set({ name: name, value: '', ...options })
-          } catch (error) {
+          } catch {
             // Handle edge case middleware overrides
           }
         },
