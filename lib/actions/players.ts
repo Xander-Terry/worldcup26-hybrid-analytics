@@ -1,7 +1,7 @@
 ﻿"use server"
 
 
-import { createClient } from "@/lib/supabase/client"
+import { createClientDirect } from "@/lib/supabase/client"
 import type { GlobalPlayer, BLStriker, LetterGrade } from "@/lib/types"
 
 // ── Supabase join row shapes ──────────────────────────────────────────────────
@@ -60,7 +60,7 @@ type ClusterBLRow = {
 export async function getGlobalPlayers(): Promise<GlobalPlayer[]> {
   console.log("GETTING GLOBAL PLAYER...");
   
-  const supabase = createClient()
+  const supabase = createClientDirect()
   
   const { data, error } = await supabase
     .from("players")
@@ -130,7 +130,7 @@ export async function getGlobalPlayers(): Promise<GlobalPlayer[]> {
 
 export async function getBLStrikers(): Promise<BLStriker[]> {
 
-  const supabase = createClient()
+  const supabase = createClientDirect()
 
   const { data, error } = await supabase
     .from("players")
@@ -220,7 +220,7 @@ export type SummaryStats = {
 
 export async function getSummaryStats(): Promise<SummaryStats> {
 
-  const supabase = createClient()
+  const supabase = createClientDirect()
 
   const { count: playerCount } = await supabase
     .from("players")

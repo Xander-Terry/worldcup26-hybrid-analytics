@@ -3,54 +3,41 @@ import { cookies } from 'next/headers'
 
 export function createClient() {
   const cookieStore = cookies()
-  
+
+  // Trim hidden whitespace/newlines from Vercel env vars
   const supabaseUrl = process.env.SUPABASE_URL?.trim()
   const supabaseAnonKey = process.env.SUPABASE_ANON_KEY?.trim()
 
-
-  // 🔍 Debug logs
+  // Debug logs (now safe)
   console.log("🔍 RAW SUPABASE_URL:", JSON.stringify(supabaseUrl))
   console.log("🔍 RAW SUPABASE_ANON_KEY:", JSON.stringify(supabaseAnonKey))
 
+  // If env vars are missing or malformed, STOP — do NOT create a fallback client
   if (!supabaseUrl || !supabaseAnonKey || !supabaseUrl.startsWith('http')) {
-    console.error("❌ CRITICAL: Supabase Environment Variables are missing on Vercel's Server Side!")
-    return createServerClient('https://placeholder-url-for-builds.supabase.co', 'placeholder', {
-      cookies: {
-        get() {
-          return null
-        },
-        set() {
-          // no-op
-        },
-        remove() {
-          // no-op
-        }
-
-      }
-
-    })
+    throw new Error("❌ Supabase environment variables are missing or invalid.")
   }
 
+  // Valid Supabase client inside request scope
   return createServerClient(
     supabaseUrl,
     supabaseAnonKey,
     {
       cookies: {
         get(name) {
-          return cookieStore.get(name)?.value
+          return cookieStore.get(name)?.value ?? null
         },
         set(name, value, options) {
           try {
             cookieStore.set({ name, value, ...options })
           } catch {
-            // Server Components sometimes throw when attempting to set cookies during render layout
+            // ignore SSR cookie write errors
           }
         },
         remove(name, options) {
           try {
-            cookieStore.set({ name: name, value: '', ...options })
+            cookieStore.set({ name, value: '', ...options })
           } catch {
-            // Handle edge case middleware overrides
+            // ignore SSR cookie write errors
           }
         },
       },
