@@ -141,7 +141,7 @@ for i in range(0, len(records), 100):
     print(f"  cluster_results_bluelock: {i+1}-{min(i+100, len(records))}")
 
 print(f"""
-âœ… Blue Lock clustering complete!
+   Blue Lock clustering complete!
    Forwards clustered: {len(df)}
    Clusters (k):       {K}
    Silhouette score:   {sil:.4f}
