@@ -228,7 +228,7 @@ P90_COLS = {
 def add_p90s(frame: pd.DataFrame, prior: float, label: str) -> pd.DataFrame:
     f    = frame.copy()
     mins = f["minutes"]
-    minutes_factor = np.minimum(1.0, np.sqrt(mins / 300))
+    minutes_factor = np.minimum(1.0, np.sqrt(mins / 500))
     for new_col, src in P90_COLS.items():
         if src in f.columns:
             base_p90 = bayes_p90(f[src], mins, prior)
@@ -511,9 +511,3 @@ df_features = df_features.merge(
 
 df_features.to_csv(OUTPUT, index=False)
 print(f"  Saved: {OUTPUT}  shape={df_features.shape}")
-print(f"""
-v6.0 complete
-  Outfield: {len(df_out)}  FW: {len(df_fw)}
-  Global axis floor: percentile-tiered (95th=50, 85th=42, 70th=34, 50th=25, 25th=15, else=8)
-  BL grade floor: S+=55, S=48, A=40, B=32, C=22, D/E=12, F=8, G=5
-""")
