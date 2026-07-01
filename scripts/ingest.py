@@ -79,7 +79,7 @@ upsert_batch("players", player_records, conflict_col="fifa_player_id")
 
 # Fetch UUIDs
 print("  Fetching player UUIDs...")
-all_p  = supabase.table("players").select("id,fifa_player_id").execute().data
+all_p  = table("players").select("id,fifa_player_id").execute().data
 id_map = {p["fifa_player_id"]: p["id"] for p in all_p}
 print(f"  UUID map: {len(id_map)} players")
 
@@ -224,7 +224,7 @@ supabase.table("ingestion_log").insert({
 }).execute()
 
 print(f"""
-   Ingestion complete!
+   Ingestion complete!!!
    Players written:          {len(df_filtered)}
    Outfield stats:           {len(df_out)}
    BL striker stats:         {len(df_fw)}
