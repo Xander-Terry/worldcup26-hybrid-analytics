@@ -4,8 +4,8 @@ import { cookies } from 'next/headers'
 export function createClient() {
   const cookieStore = cookies()
   
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  const supabaseUrl = process.env.SUPABASE_URL
+  const supabaseAnonKey = process.env.SUPABASE_ANON_KEY
 
   // Safe fallback to prevent the app from throwing a cryptic, un-loggable error
   if (!supabaseUrl || !supabaseAnonKey || !supabaseUrl.startsWith('http')) {

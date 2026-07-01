@@ -1,6 +1,4 @@
-[System.IO.File]::WriteAllText(
-  (Join-Path (Get-Location) "db\schema.sql"),
-  @'
+
 -- =============================================
 -- WC26 Hybrid Analytics — Schema v3.0
 -- Source: FIFA GameDay API (live WC2026 data)
@@ -203,7 +201,3 @@ CREATE INDEX IF NOT EXISTS idx_bl_cluster         ON cluster_results_bluelock(cl
 CREATE INDEX IF NOT EXISTS idx_stats_raw          ON player_stats_raw(player_id);
 CREATE INDEX IF NOT EXISTS idx_stats_global       ON player_stats_global(player_id);
 CREATE INDEX IF NOT EXISTS idx_stats_bl           ON player_stats_bluelock(player_id);
-'@,
-  [System.Text.Encoding]::UTF8
-)
-Write-Host "schema.sql v3.0 written" -ForegroundColor Green
