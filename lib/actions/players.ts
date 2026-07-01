@@ -143,6 +143,7 @@ export async function getGlobalPlayers(): Promise<GlobalPlayer[]> {
 // ── Blue Lock Mode ────────────────────────────────────────────────────────────
 
 export async function getBLStrikers(): Promise<BLStriker[]> {
+  console.log("getBLStrikers: forcing Vercel lambda rebuild")
   const { data, error } = await supabase
     .from("players")
     .select(`
