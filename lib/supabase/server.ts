@@ -1,30 +1,39 @@
-﻿/**
- * Server-only Supabase client.
- * Uses the service role key — bypasses RLS, cookies, and SSR complexity.
- * Safe to use in Server Components and Server Actions because this file
- * is never imported by any client component.
- * 
- * NEXT_PUBLIC_SUPABASE_URL    — available in both server + client contexts
- * SUPABASE_SERVICE_ROLE_KEY   — server only, never exposed to browser
- */
-import { createClient } from "@supabase/supabase-js"
+﻿import { createServerClient } from '@supabase/ssr'
+import { cookies } from 'next/headers'
 
-const supabaseUrl  = process.env.NEXT_PUBLIC_SUPABASE_URL
-const supabaseKey  = process.env.SUPABASE_SERVICE_ROLE_KEY
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-if (!supabaseUrl || !supabaseKey) {
-  throw new Error(
-    "Missing Supabase env vars. " +
-    "Ensure NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY " +
-    "are set in Vercel environment variables."
-  )
+// Safety guard to prevent Vercel environment blank crashes
+if (!supabaseUrl || !supabaseAnonKey || !supabaseUrl.startsWith('http')) {
+  console.error("❌ CRITICAL: Supabase Environment Variables are missing on Vercel's Server Side!")
 }
 
-// Singleton — reused across all server action calls in the same request
-export const supabase = createClient(supabaseUrl, supabaseKey, {
-  auth: {
-    persistSession:    false,
-    autoRefreshToken:  false,
-    detectSessionInUrl:false,
-  },
-})
+export const supabase = createServerClient(
+  supabaseUrl || 'https://placeholder-url-for-builds.supabase.co',
+  supabaseAnonKey || 'placeholder',
+  {
+    cookies: {
+      get(name) {
+        const cookieStore = cookies()
+        return cookieStore.get(name)?.value
+      },
+      set(name, value, options) {
+        const cookieStore = cookies()
+        try {
+          cookieStore.set({ name, value, ...options })
+        } catch (error) {
+          // Handled for server component rendering phases
+        }
+      },
+      remove(name, options) {
+        const cookieStore = cookies()
+        try {
+          cookieStore.set({ name: name, value: '', ...options })
+        } catch (error) {
+          // Handled for server component rendering phases
+        }
+      },
+    },
+  }
+)
