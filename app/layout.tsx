@@ -4,6 +4,8 @@ import './globals.css'
 import { NavBar } from '@/components/layout/NavBar'
 import { siteConfig } from '@/config/site'
 
+//testing redeploy
+
 const inter = Inter({ subsets: ['latin'] })
 
 const GlobalElectricFilter = () => (

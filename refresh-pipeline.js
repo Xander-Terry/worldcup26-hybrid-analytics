@@ -30,7 +30,7 @@ async function runPipeline() {
       execSync(`python ${scriptPath}`, { stdio: "inherit" });
       console.log(`✅ Step ${i + 1} completed successfully.\n`);
     } catch (error) {
-      console.error(`\n❌ CRITICAL ERROR at step ${i + 1} (${step.script})`);
+      console.error(`\n CRITICAL ERROR at step ${i + 1} (${step.script})`);
       console.error("Pipeline execution halted to prevent corrupting database states.");
       process.exit(1);
     }

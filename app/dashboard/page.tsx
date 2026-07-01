@@ -1,13 +1,12 @@
-﻿  console.log("🔍 RAW SUPABASE_URL:", JSON.stringify(process.env.SUPABASE_URL));
-  console.log("🔍 RAW SUPABASE_KEY:", JSON.stringify(process.env.SUPABASE_ANON_KEY));
-  
-import { Suspense } from "react"
+﻿import { Suspense } from "react"
 import { getGlobalPlayers, getBLStrikers, getSummaryStats } from "@/lib/actions/players"
 import { DashboardClient } from "./DashboardClient"
 import { LeaderboardSkeleton } from "@/components/shared/LoadingSkeleton"
 
 export default async function DashboardPage() {
-
+  console.log("🔍 RAW SUPABASE_URL:", JSON.stringify(process.env.SUPABASE_URL));
+  console.log("🔍 RAW SUPABASE_KEY:", JSON.stringify(process.env.SUPABASE_ANON_KEY));
+  
   console.log("🏁 1. Dashboard Page Render Triggered...")
 
   try {

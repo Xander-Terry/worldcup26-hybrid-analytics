@@ -2,59 +2,68 @@
 
 on:
   schedule:
-    # Runs at 06:00 UTC daily — adjust for your timezone
-    # During World Cup, matches finish by ~03:00 UTC
     - cron: "0 6 * * *"
-  workflow_dispatch:    # allow manual trigger from GitHub UI
+  workflow_dispatch:
 
 jobs:
   refresh:
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Python
+      - name: Set up Python 3.11
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
-      - name: Install dependencies
-        run: |
-          cd scripts
-          pip install -r requirements.txt
+      - name: Install Python dependencies
+        run: pip install -r scripts/requirements.txt
 
-      - name: Run FIFA download
+      - name: Download FIFA stats
         env:
           NEXT_PUBLIC_SUPABASE_URL:  ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-        run: |
-          cd scripts
-          python download_fifa_stats.py
+        run: python scripts/download_fifa_stats.py
 
-      - name: Parse + merge + clean
+      - name: Parse tabs
         env:
           NEXT_PUBLIC_SUPABASE_URL:  ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-        run: |
-          cd scripts
-          python parse_fifa_tabs.py
-          python merge_fifa_tabs.py
-          python clean_master_dataset.py
+        run: python scripts/parse_fifa_tabs.py
 
-      - name: Derive features + ingest
+      - name: Merge tabs
         env:
           NEXT_PUBLIC_SUPABASE_URL:  ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-        run: |
-          cd scripts
-          python derive_features.py
-          python ingest.py
+        run: python scripts/merge_fifa_tabs.py
 
-      - name: Re-cluster
+      - name: Clean dataset
         env:
           NEXT_PUBLIC_SUPABASE_URL:  ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-        run: |
-          cd scripts
-          python cluster_global.py
-          python cluster_bluelock.py
+        run: python scripts/clean_master_dataset.py
+
+      - name: Derive features
+        env:
+          NEXT_PUBLIC_SUPABASE_URL:  ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: python scripts/derive_features.py
+
+      - name: Ingest to Supabase
+        env:
+          NEXT_PUBLIC_SUPABASE_URL:  ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: python scripts/ingest.py
+
+      - name: Cluster global
+        env:
+          NEXT_PUBLIC_SUPABASE_URL:  ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: python scripts/cluster_global.py
+
+      - name: Cluster Blue Lock
+        env:
+          NEXT_PUBLIC_SUPABASE_URL:  ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: python scripts/cluster_bluelock.py

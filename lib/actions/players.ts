@@ -57,6 +57,8 @@ type ClusterBLRow = {
 // ── Global Mode ───────────────────────────────────────────────────────────────
 
 export async function getGlobalPlayers(): Promise<GlobalPlayer[]> {
+    console.log("GETTING GLOBAL PLAYER...");
+  
   const { data, error } = await supabase
     .from("players")
     .select(`
