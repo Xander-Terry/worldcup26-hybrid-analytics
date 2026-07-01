@@ -1,12 +1,20 @@
 ﻿"use server"
 
 import { createClient } from "@supabase/supabase-js"
-
 import type { GlobalPlayer, BLStriker, LetterGrade } from "@/lib/types"
 
+// Pull environment variables safely (checking both variations just in case)
+const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL
+const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+if (!supabaseUrl || !supabaseAnonKey) {
+  console.error("❌ CRITICAL: Supabase credentials are completely missing on Vercel's environment variables!")
+}
+
+// Fallback to a placeholder string to prevent "Invalid URL" crash, letting the app build cleanly
 const supabase = createClient(
-  process.env.SUPABASE_URL!,
-  process.env.SUPABASE_ANON_KEY!,
+  supabaseUrl || "https://placeholder-url-for-builds.supabase.co",
+  supabaseAnonKey || "placeholder_key",
   {
     auth: {
       persistSession: false,
