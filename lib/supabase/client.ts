@@ -1,14 +1,17 @@
+﻿/**
+ * Browser-side Supabase client — used only in Client Components.
+ * Uses anon key only. No SSR, no cookies, no auth session.
+ */
 import { createClient } from "@supabase/supabase-js"
 
-export function createClientDirect() {
-  const supabaseUrl = process.env.SUPABASE_URL!.trim()
-  const supabaseAnonKey = process.env.SUPABASE_ANON_KEY!.trim()
-
-  return createClient(supabaseUrl, supabaseAnonKey, {
+export const supabase = createClient(
+  process.env.SUPABASE_URL!,
+  process.env.SUPABASE_ANON_KEY!,
+  {
     auth: {
-      persistSession: false,
-      autoRefreshToken: false,
+      persistSession:     false,
+      autoRefreshToken:   false,
       detectSessionInUrl: false,
     },
-  })
-}
+  }
+)

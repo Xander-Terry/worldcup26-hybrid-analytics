@@ -1,13 +1,22 @@
 ﻿"use server"
 
+import { createClient } from "@supabase/supabase-js"
 
-import { createClientDirect } from "@/lib/supabase/client"
 import type { GlobalPlayer, BLStriker, LetterGrade } from "@/lib/types"
 
-// ── Supabase join row shapes ──────────────────────────────────────────────────
+const supabase = createClient(
+  process.env.SUPABASE_URL!,
+  process.env.SUPABASE_ANON_KEY!,
+  {
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false,
+      detectSessionInUrl: false,
+    },
+  }
+)
 
 type GlobalStatsRow = {
-  minutes:             number
   goals:               number
   assists:             number
   attacking_threat:    number
@@ -56,12 +65,12 @@ type ClusterBLRow = {
 }
 
 // ── Global Mode ───────────────────────────────────────────────────────────────
+// NOTE: Do NOT select `minutes` from player_stats_global — it conflicts
+// with player_stats_raw.minutes and causes a Supabase join alias error.
+// Minutes for display come from player_stats_raw only.
 
 export async function getGlobalPlayers(): Promise<GlobalPlayer[]> {
-  console.log("GETTING GLOBAL PLAYER...");
-  
-  const supabase = createClientDirect()
-  
+
   const { data, error } = await supabase
     .from("players")
     .select(`
@@ -70,7 +79,6 @@ export async function getGlobalPlayers(): Promise<GlobalPlayer[]> {
       team,
       position,
       player_stats_global (
-        minutes,
         goals,
         assists,
         attacking_threat,
@@ -79,6 +87,11 @@ export async function getGlobalPlayers(): Promise<GlobalPlayer[]> {
         defensive_actions,
         possession_security,
         physical_impact
+      ),
+      player_stats_raw (
+        minutes,
+        goals,
+        assists
       ),
       cluster_results_global (
         cluster_id,
@@ -99,6 +112,7 @@ export async function getGlobalPlayers(): Promise<GlobalPlayer[]> {
     .filter((p) => p.player_stats_global && p.cluster_results_global)
     .map((p) => {
       const stats   = p.player_stats_global as unknown as GlobalStatsRow
+      const raw     = p.player_stats_raw    as unknown as RawStatsRow | null
       const cluster = p.cluster_results_global as unknown as ClusterGlobalRow
 
       return {
@@ -107,9 +121,9 @@ export async function getGlobalPlayers(): Promise<GlobalPlayer[]> {
         team:        p.team,
         nationality: p.team,
         position:    p.position as GlobalPlayer["position"],
-        goals:       stats.goals   ?? 0,
-        assists:     stats.assists ?? 0,
-        minutes:     stats.minutes ?? 0,
+        goals:       raw?.goals   ?? stats.goals   ?? 0,
+        assists:     raw?.assists ?? stats.assists ?? 0,
+        minutes:     raw?.minutes ?? 0,
         axes: {
           attacking_threat:    stats.attacking_threat    ?? 0,
           chance_creation:     stats.chance_creation     ?? 0,
@@ -129,9 +143,6 @@ export async function getGlobalPlayers(): Promise<GlobalPlayer[]> {
 // ── Blue Lock Mode ────────────────────────────────────────────────────────────
 
 export async function getBLStrikers(): Promise<BLStriker[]> {
-
-  const supabase = createClientDirect()
-
   const { data, error } = await supabase
     .from("players")
     .select(`
@@ -166,9 +177,9 @@ export async function getBLStrikers(): Promise<BLStriker[]> {
   return (data ?? [])
     .filter((p) => p.player_stats_bluelock && p.cluster_results_bluelock)
     .map((p) => {
-      const bl      = p.player_stats_bluelock as unknown as BLStatsRow
-      const raw     = p.player_stats_raw      as unknown as RawStatsRow | null
-      const cluster = p.cluster_results_bluelock as unknown as ClusterBLRow
+      const bl      = p.player_stats_bluelock    as unknown as BLStatsRow
+      const raw     = p.player_stats_raw          as unknown as RawStatsRow | null
+      const cluster = p.cluster_results_bluelock  as unknown as ClusterBLRow
 
       return {
         id:          p.id,
@@ -191,10 +202,10 @@ export async function getBLStrikers(): Promise<BLStriker[]> {
           grade_speed:   bl.grade_speed   as LetterGrade,
           grade_defense: bl.grade_defense as LetterGrade,
         },
-        overall_score:   bl.overall_score   ?? 0,
-        overall_grade:   bl.overall_grade   as LetterGrade,
-        ego_x:           bl.ego_x           ?? 50,
-        ego_y:           bl.ego_y           ?? 50,
+        overall_score:   bl.overall_score  ?? 0,
+        overall_grade:   bl.overall_grade  as LetterGrade,
+        ego_x:           bl.ego_x          ?? 50,
+        ego_y:           bl.ego_y          ?? 50,
         cluster_id:      cluster.cluster_id,
         archetype_label: cluster.archetype_label,
         goals:           raw?.goals   ?? 0,
@@ -219,9 +230,6 @@ export type SummaryStats = {
 }
 
 export async function getSummaryStats(): Promise<SummaryStats> {
-
-  const supabase = createClientDirect()
-
   const { count: playerCount } = await supabase
     .from("players")
     .select("id", { count: "exact", head: true })
