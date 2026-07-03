@@ -6,22 +6,32 @@ Writes: Supabase tables
         players, player_stats_raw, player_stats_global,
         player_stats_bluelock, ingestion_log
 """
-
-import os, sys
+import os
+import sys
+import requests
 import pandas as pd
-import numpy as np
 from pathlib import Path
-from supabase import create_client, Client
 from dotenv import load_dotenv
 
-load_dotenv(dotenv_path=Path(__file__).parent.parent / ".env.local")
-SUPABASE_URL = os.environ.get("NEXT_PUBLIC_SUPABASE_URL")
+# Load .env.local only if it exists (local dev)
+env_path = Path(__file__).parent.parent / ".env.local"
+if env_path.exists():
+    load_dotenv(env_path)
+
+SUPABASE_URL = os.environ.get("SUPABASE_URL") or os.environ.get("NEXT_PUBLIC_SUPABASE_URL")
 SUPABASE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
+
 if not SUPABASE_URL or not SUPABASE_KEY:
-    print("ERROR: Missing Supabase env vars in .env.local")
+    print("ERROR: Missing Supabase environment variables")
     sys.exit(1)
 
-supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+HEADERS = {
+    "apikey": SUPABASE_KEY,
+    "Authorization": f"Bearer {SUPABASE_KEY}",
+    "Content-Type": "application/json",
+    "Prefer": "resolution=merge-duplicates"
+}
+
 
 FEATURES_CSV = Path("data/processed/master_fifa_features.csv")
 
@@ -43,12 +53,45 @@ def sn(x):
         return None if (v != v or v == 0) else v
     except:
         return None
+    
+def select(table: str, columns: str):
+    url = f"{SUPABASE_URL}/rest/v1/{table}"
+    resp = requests.get(
+        url,
+        headers=HEADERS,
+        params={"select": columns}
+    )
+    if resp.status_code >= 300:
+        print("ERROR:", resp.text)
+        sys.exit(1)
+    return resp.json()
+
+def insert(table: str, record: dict):
+    url = f"{SUPABASE_URL}/rest/v1/{table}"
+    resp = requests.post(url, headers=HEADERS, json=record)
+    if resp.status_code >= 300:
+        print("ERROR:", resp.text)
+        sys.exit(1)
+
 
 def upsert_batch(table: str, records: list, conflict_col: str = "player_id"):
+    url = f"{SUPABASE_URL}/rest/v1/{table}"
     for i in range(0, len(records), 100):
         chunk = records[i:i+100]
-        supabase.table(table).upsert(chunk, on_conflict=conflict_col).execute()
+        resp = requests.post(
+            url,
+            headers=HEADERS,
+            json=chunk,
+            params={
+                "on_conflict": conflict_col,
+            }
+        )
+        if resp.status_code >= 300:
+            print("ERROR:", resp.text)
+            sys.exit(1)
         print(f"  {table}: {i+1}–{min(i+100,len(records))}")
+
+
 
 # ── Load ──────────────────────────────────────────────────────────────────────
 print("\n[1/6] Loading feature dataset...")
@@ -79,9 +122,10 @@ upsert_batch("players", player_records, conflict_col="fifa_player_id")
 
 # Fetch UUIDs
 print("  Fetching player UUIDs...")
-all_p  = table("players").select("id,fifa_player_id").execute().data
+all_p = select("players", "id,fifa_player_id")
 id_map = {p["fifa_player_id"]: p["id"] for p in all_p}
 print(f"  UUID map: {len(id_map)} players")
+
 
 # ── Upsert player_stats_raw ───────────────────────────────────────────────────
 print("\n[3/6] Upserting player_stats_raw...")
@@ -216,12 +260,13 @@ upsert_batch("player_stats_bluelock", bl_records)
 # ── Log ───────────────────────────────────────────────────────────────────────
 print("\n[6/6] Logging ingestion run...")
 df_filtered = df[pd.to_numeric(df.get("minutes",0),errors="coerce").fillna(0) >= 5]
-supabase.table("ingestion_log").insert({
-    "source":          "fifa_gameday_api",
+insert("ingestion_log", {
+    "source": "fifa_gameday_api",
     "players_written": len(df_filtered),
-    "status":          "success",
-    "notes":           f"outfield={len(df_out)}, fw={len(df_fw)}, source=master_fifa_features.csv",
-}).execute()
+    "status": "success",
+    "notes": f"outfield={len(df_out)}, fw={len(df_fw)}, source=master_fifa_features.csv"
+})
+
 
 print(f"""
    Ingestion complete!!!
