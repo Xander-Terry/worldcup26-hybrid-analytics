@@ -15,21 +15,32 @@ import sys
 import numpy as np
 import pandas as pd
 from pathlib import Path
-from supabase import create_client, Client
 from dotenv import load_dotenv
 from sklearn.preprocessing import StandardScaler
 from sklearn.cluster import KMeans
 from sklearn.metrics import silhouette_score
 import umap
+import requests
 
-load_dotenv(dotenv_path=Path(__file__).parent.parent / ".env.local")
-SUPABASE_URL = os.environ.get("NEXT_PUBLIC_SUPABASE_URL")
+# Load local env only if present
+env_path = Path(__file__).parent.parent / ".env.local"
+if env_path.exists():
+    load_dotenv(env_path)
+
+SUPABASE_URL = os.environ.get("SUPABASE_URL") or os.environ.get("NEXT_PUBLIC_SUPABASE_URL")
 SUPABASE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
+
 if not SUPABASE_URL or not SUPABASE_KEY:
     print("ERROR: Missing Supabase env vars")
     sys.exit(1)
 
-supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+HEADERS = {
+    "apikey": SUPABASE_KEY,
+    "Authorization": f"Bearer {SUPABASE_KEY}",
+    "Content-Type": "application/json",
+    "Prefer": "resolution=merge-duplicates"
+}
+
 
 # -- Config --------------------------------------------------------------------
 K = 6
@@ -66,13 +77,16 @@ all_rows = []
 page = 0
 page_size = 1000
 while True:
-    result = (
-        supabase.table("player_stats_global")
-        .select("player_id," + ",".join(AXIS_COLS))
-        .range(page * page_size, (page + 1) * page_size - 1)
-        .execute()
-    )
-    rows = result.data
+    url = f"{SUPABASE_URL}/rest/v1/player_stats_global"
+    params = {
+        "select": "player_id," + ",".join(AXIS_COLS),
+        "offset": page * page_size,
+        "limit": page_size
+    }
+
+    resp = requests.get(url, headers=HEADERS, params=params)
+    rows = resp.json()
+
     if not rows:
         break
     all_rows.extend(rows)
@@ -150,9 +164,17 @@ for _, row in df.iterrows():
 
 for i in range(0, len(records), 100):
     chunk = records[i:i+100]
-    supabase.table("cluster_results_global").upsert(
-        chunk, on_conflict="player_id"
-    ).execute()
+    url = f"{SUPABASE_URL}/rest/v1/cluster_results_global"
+    resp = requests.post(
+        url,
+        headers=HEADERS,
+        json=chunk,
+        params={"on_conflict": "player_id"}
+    )
+    if resp.status_code >= 300:
+        print("ERROR:", resp.text)
+        sys.exit(1)
+
     print(f"  cluster_results_global: {i+1}-{min(i+100, len(records))}")
 
 print(f"""

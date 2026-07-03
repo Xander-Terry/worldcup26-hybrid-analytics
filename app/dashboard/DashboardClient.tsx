@@ -110,10 +110,10 @@ export function DashboardClient({ globalPlayers, blStrikers, summary }: Props) {
               {isGlobal ? (
                 <div>
                   <h1 className="text-2xl font-bold text-[#0F172A]">
-                    World Cup 2026 — Scouting Dashboard
+                    World Cup 2026: Playstyle & Performance Analysis
                   </h1>
                   <p className="text-sm text-[#64748B] mt-1">
-                    Outfield player analytics · All groups · {summary.totalMatches} matches covered
+                    Outfield player analytics · 48 Nations · Raw Stats From Fifa.com
                   </p>
                 </div>
               ) : (
@@ -125,7 +125,7 @@ export function DashboardClient({ globalPlayers, blStrikers, summary }: Props) {
                     Striker Evaluation System
                   </h1>
                   <p className="font-mono text-sm text-[#6B7F9B] mt-1">
-                    Blue Lock Ego Rating Framework · WC26 Group Stage
+                    Blue Lock Ego Rating Framework · WC26 
                   </p>
                 </div>
               )}
@@ -157,9 +157,9 @@ export function DashboardClient({ globalPlayers, blStrikers, summary }: Props) {
                   />
                   <StatCard
                     mode="global"
-                    label="Matches Covered"
-                    value={summary.totalMatches}
-                    subline="Group stage complete"
+                    label="Participant Nations"
+                    value={48}
+                    subline="Four Debut Countries"
                     icon={<Activity className="h-4 w-4" />}
                   />
                   <StatCard

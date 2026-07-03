@@ -41,16 +41,6 @@ export function NavBar({ mode }: Props) {
             >
               WC26 Analytics
             </span>
-            <span
-              className="rounded px-1.5 py-0.5 font-mono text-[9px] font-bold"
-              style={{
-                color:      isGlobal ? "#2563EB" : "#00F0FF",
-                background: isGlobal ? "#EFF6FF"  : "#00F0FF14",
-                border:     isGlobal ? "1px solid #BFDBFE" : "1px solid #00F0FF44",
-              }}
-            >
-              BETA
-            </span>
           </div>
         </Link>
 
@@ -58,7 +48,6 @@ export function NavBar({ mode }: Props) {
         <nav className="flex items-center gap-1">
           {[
             { label: "Dashboard", href: "/dashboard" },
-            { label: "Admin",     href: "/admin" },
           ].map(({ label, href }) => (
             <Link
               key={href}
