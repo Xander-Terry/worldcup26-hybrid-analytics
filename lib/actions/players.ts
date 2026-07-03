@@ -1,5 +1,7 @@
 ﻿"use server"
 
+
+//UPDATED TO NO LONGER CAUSE IPROPER MERGE ERROR< MAKE SURE TO CROSS CHECK SCHEMA WITH QUERIES CAUSE IT LEADS TO ERRORS
 import { supabase } from "@/lib/supabase/server"
 import type { GlobalPlayer, BLStriker, LetterGrade } from "@/lib/types"
 
