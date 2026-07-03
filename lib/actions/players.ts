@@ -1,23 +1,7 @@
-﻿// 1. ❌ REMOVE "use server" from the top. Leave it completely blank or use "use client"
+﻿"use server"
 
-import { createClient } from "@supabase/supabase-js"
+import { supabase } from "@/lib/supabase/server"
 import type { GlobalPlayer, BLStriker, LetterGrade } from "@/lib/types"
-
-// 2. Use the exact variables Vercel is printing out
-const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || ""
-const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ""
-
-// 3. Initialize a bare-bones client with zero auth/cookie dependencies
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    persistSession: false,
-    autoRefreshToken: false,
-    detectSessionInUrl: false
-  }
-}
-
-// Keep all your type definitions and functions (getGlobalPlayers, getBLStrikers) exactly as they are below!
-)
 
 type GlobalStatsRow = {
   goals:               number
@@ -67,13 +51,7 @@ type ClusterBLRow = {
   archetype_label: string
 }
 
-// ── Global Mode ───────────────────────────────────────────────────────────────
-// NOTE: Do NOT select `minutes` from player_stats_global — it conflicts
-// with player_stats_raw.minutes and causes a Supabase join alias error.
-// Minutes for display come from player_stats_raw only.
-
 export async function getGlobalPlayers(): Promise<GlobalPlayer[]> {
-
   const { data, error } = await supabase
     .from("players")
     .select(`
@@ -82,8 +60,6 @@ export async function getGlobalPlayers(): Promise<GlobalPlayer[]> {
       team,
       position,
       player_stats_global (
-        goals,
-        assists,
         attacking_threat,
         chance_creation,
         ball_progression,
@@ -112,10 +88,10 @@ export async function getGlobalPlayers(): Promise<GlobalPlayer[]> {
   }
 
   return (data ?? [])
-    .filter((p) => p.player_stats_global && p.cluster_results_global)
-    .map((p) => {
-      const stats   = p.player_stats_global as unknown as GlobalStatsRow
-      const raw     = p.player_stats_raw    as unknown as RawStatsRow | null
+    .filter(p => p.player_stats_global && p.cluster_results_global)
+    .map(p => {
+      const stats   = p.player_stats_global   as unknown as GlobalStatsRow
+      const raw     = p.player_stats_raw       as unknown as RawStatsRow | null
       const cluster = p.cluster_results_global as unknown as ClusterGlobalRow
 
       return {
@@ -124,8 +100,8 @@ export async function getGlobalPlayers(): Promise<GlobalPlayer[]> {
         team:        p.team,
         nationality: p.team,
         position:    p.position as GlobalPlayer["position"],
-        goals:       raw?.goals   ?? stats.goals   ?? 0,
-        assists:     raw?.assists ?? stats.assists ?? 0,
+        goals:       raw?.goals   ?? 0,
+        assists:     raw?.assists ?? 0,
         minutes:     raw?.minutes ?? 0,
         axes: {
           attacking_threat:    stats.attacking_threat    ?? 0,
@@ -143,10 +119,7 @@ export async function getGlobalPlayers(): Promise<GlobalPlayer[]> {
     })
 }
 
-// ── Blue Lock Mode ────────────────────────────────────────────────────────────
-
 export async function getBLStrikers(): Promise<BLStriker[]> {
-  console.log("getBLStrikers: forcing Vercel lambda rebuild")
   const { data, error } = await supabase
     .from("players")
     .select(`
@@ -179,11 +152,11 @@ export async function getBLStrikers(): Promise<BLStriker[]> {
   }
 
   return (data ?? [])
-    .filter((p) => p.player_stats_bluelock && p.cluster_results_bluelock)
-    .map((p) => {
-      const bl      = p.player_stats_bluelock    as unknown as BLStatsRow
-      const raw     = p.player_stats_raw          as unknown as RawStatsRow | null
-      const cluster = p.cluster_results_bluelock  as unknown as ClusterBLRow
+    .filter(p => p.player_stats_bluelock && p.cluster_results_bluelock)
+    .map(p => {
+      const bl      = p.player_stats_bluelock   as unknown as BLStatsRow
+      const raw     = p.player_stats_raw         as unknown as RawStatsRow | null
+      const cluster = p.cluster_results_bluelock as unknown as ClusterBLRow
 
       return {
         id:          p.id,
@@ -206,10 +179,10 @@ export async function getBLStrikers(): Promise<BLStriker[]> {
           grade_speed:   bl.grade_speed   as LetterGrade,
           grade_defense: bl.grade_defense as LetterGrade,
         },
-        overall_score:   bl.overall_score  ?? 0,
-        overall_grade:   bl.overall_grade  as LetterGrade,
-        ego_x:           bl.ego_x          ?? 50,
-        ego_y:           bl.ego_y          ?? 50,
+        overall_score:   bl.overall_score ?? 0,
+        overall_grade:   bl.overall_grade as LetterGrade,
+        ego_x:           bl.ego_x ?? 50,
+        ego_y:           bl.ego_y ?? 50,
         cluster_id:      cluster.cluster_id,
         archetype_label: cluster.archetype_label,
         goals:           raw?.goals   ?? 0,
@@ -220,17 +193,10 @@ export async function getBLStrikers(): Promise<BLStriker[]> {
     .sort((a, b) => b.overall_score - a.overall_score)
 }
 
-// ── Summary stats ─────────────────────────────────────────────────────────────
-
 export type SummaryStats = {
   totalPlayers: number
   totalMatches: number
-  topScorer: {
-    name:    string
-    team:    string
-    goals:   number
-    assists: number
-  } | null
+  topScorer: { name: string; team: string; goals: number; assists: number } | null
 }
 
 export async function getSummaryStats(): Promise<SummaryStats> {

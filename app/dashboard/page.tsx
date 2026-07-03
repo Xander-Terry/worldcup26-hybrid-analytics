@@ -1,14 +1,12 @@
 ﻿import { Suspense } from "react"
-import { getGlobalPlayers, getBLStrikers, getSummaryStats } from "@/lib/actions/players"
 import { DashboardClient } from "./DashboardClient"
 import { LeaderboardSkeleton } from "@/components/shared/LoadingSkeleton"
-
+export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
 
 export default async function DashboardPage() {
-  console.log("🔍 RAW SUPABASE_URL:", JSON.stringify(process.env.SUPABASE_URL));
-  console.log("🔍 RAW SUPABASE_KEY:", JSON.stringify(process.env.SUPABASE_ANON_KEY));
-  
+  const { getGlobalPlayers, getBLStrikers, getSummaryStats } = await import("@/lib/actions/players")
+
   console.log("🏁 1. Dashboard Page Render Triggered...")
 
   try {
