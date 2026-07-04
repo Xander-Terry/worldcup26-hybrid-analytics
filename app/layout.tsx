@@ -44,15 +44,16 @@ const GlobalElectricFilter = () => (
 
 
 
-
-
-
-
-
 export const metadata: Metadata = {
   title: siteConfig.name,
   description: siteConfig.description,
+  icons: {
+    icon: "/favicon.png",
+    shortcut: "/favicon.png",
+    apple: "/favicon.png",
+  },
 }
+
 
 export default function RootLayout({
   children,
