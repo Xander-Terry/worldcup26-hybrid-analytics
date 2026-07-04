@@ -2,6 +2,8 @@
 
 import type { BLStriker } from "@/lib/types"
 import { GRADE_COLORS } from "@/lib/types"
+import Image from "next/image"
+
 
 const GRADE_ORDER = ["S+","S","A","B","C","D","E","F","G"]
 
@@ -108,16 +110,20 @@ export function BLBanner({ strikers }: Props) {
           zIndex: 10,
         }}
       >
-        <img
+       <Image
           src="/egospritecrop.png"
-          alt=""
+          alt="Ego Sprite"
+          width={300}
+          height={218}
           style={{
-            height:    "100%",
-            width:     "auto",
+            height: "100%",
+            width: "auto",
             objectFit: "contain",
             objectPosition: "bottom",
           }}
+          priority
         />
+
       </div>
     </div>
   )

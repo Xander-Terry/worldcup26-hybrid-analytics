@@ -2,6 +2,8 @@
 
 import { motion } from "framer-motion"
 import { Globe } from "lucide-react"
+import Image from "next/image"
+
 
 type Mode = "global" | "bluelock"
 
@@ -59,10 +61,13 @@ export function ModeTabBar({ activeMode, onModeChange }: Props) {
           />
         )}
         {/* Blue Lock icon — BL_bltab when BL active, BL_globaltab when global active */}
-        <img
+        <Image
           src={activeMode === "bluelock" ? "/BL_bltab.png" : "/BL_globaltab.png"}
           alt="Blue Lock"
+          width={16}
+          height={16}
           className="relative h-4 w-4 object-contain"
+          priority
         />
         <span className="relative">BLUE LOCK</span>
       </button>
