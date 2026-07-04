@@ -87,7 +87,7 @@ export function BLStrikerCard({ striker }: Props) {
                 {striker.name}
               </p>
               <p className="font-mono text-xs text-[#6B7F9B] mt-0.5">
-                {striker.nationality} · {striker.team}
+                {striker.nationality} 
               </p>
               <span
                 className="mt-1.5 inline-block rounded px-2 py-0.5 font-mono text-[9px] font-bold"
