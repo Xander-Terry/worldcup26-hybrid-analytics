@@ -57,9 +57,10 @@ export function BLPlayerTag({ striker }: Props) {
 
       {/* Big overall grade letter */}
       <text
-        x={W / 2} y={86}
+        x={W / 2}
+        y={H / 2}
         textAnchor="middle"
-        dominantBaseline="central"
+        dominantBaseline="middle"
         fill={color}
         fontFamily="Rajdhani, sans-serif"
         fontWeight={800}
@@ -68,6 +69,7 @@ export function BLPlayerTag({ striker }: Props) {
       >
         {striker.overall_grade}
       </text>
+
 
       <line x1={6} y1={104} x2={W - 6} y2={104} stroke="#0F53D6" strokeOpacity={0.4} strokeWidth={0.5} />
 

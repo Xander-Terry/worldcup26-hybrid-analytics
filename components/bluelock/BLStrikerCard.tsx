@@ -68,7 +68,15 @@ export function BLStrikerCard({ striker }: Props) {
           border:     `1px solid ${color}44`,
         }}
       >
-        <div className="absolute inset-0 bl-crosshatch pointer-events-none" />
+        <svg className="absolute inset-0 h-full w-full pointer-events-none" preserveAspectRatio="none">
+          <defs>
+            <pattern id="card-header-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+              <path d="M20 0H0V20" fill="none" stroke="#00F0FF" strokeOpacity={0.07} strokeWidth={0.6} />
+            </pattern>
+          </defs>
+          <rect width="100%" height="100%" fill="url(#card-header-grid)" />
+        </svg>
+
         <CornerBrackets color={color} />
 
         <div className="relative flex items-center justify-between gap-4">

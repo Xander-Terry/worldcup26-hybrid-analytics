@@ -1,7 +1,6 @@
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
-import { NavBar } from '@/components/layout/NavBar'
 import { siteConfig } from '@/config/site'
 
 //testing redeploy
@@ -67,8 +66,7 @@ export default function RootLayout({
         {/* Render the global filter ONCE */}
         <GlobalElectricFilter />
 
-        <NavBar mode="global" />
-        <main className="container mx-auto px-4 py-6">
+        <main>
           {children}
         </main>
       </body>

@@ -125,7 +125,7 @@ export function DashboardClient({ globalPlayers, blStrikers, summary }: Props) {
                     Striker Evaluation System
                   </h1>
                   <p className="font-mono text-sm text-[#6B7F9B] mt-1">
-                    Blue Lock Ego Rating Framework · WC26 
+                    Blue Lock Ego Analysis Framework · WC26 Diamonds In The Rough
                   </p>
                 </div>
               )}
