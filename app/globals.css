@@ -32,15 +32,16 @@
     z-index: 0;
     background: linear-gradient(
       135deg,
-        #E91E63 0%,   #E91E63 15%,
-        #2C86FF 15%,  #2C86FF 30%,
-        #2A398D 12%,  #2A398D 30%,
-        #3CAC3B 35%,  #3CAC3B 52%,
-        #FF6E3F 12%,  #FF6E3F 28%,
-        #720cf0 70%,  #720cf0 80%,
-        #F3BC00 17%,  #F3BC00 29%,
-        #8df702 15%,  #8df702 50%
+        #E91E63 0%,   #E91E63 12%,
+        #2C86FF 12%,  #2C86FF 24%,
+        #2A398D 24%,  #2A398D 36%,
+        #3CAC3B 36%,  #3CAC3B 48%,
+        #FF6E3F 48%,  #FF6E3F 60%,
+        #F3BC00 60%,  #F3BC00 72%,   /* YELLOW NOW CLEAR */
+        #720cf0 72%,  #720cf0 84%,
+        #8df702 84%,  #8df702 100%
     );
+
     pointer-events: none;
   }
 
