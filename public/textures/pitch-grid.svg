@@ -1,0 +1,19 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" width="120" height="80">
+  <!-- Vertical lines (like pitch lanes) -->
+  <line x1="0"   y1="0" x2="0"   y2="80" stroke="#1a1a1a" stroke-width="0.6"/>
+  <line x1="30"  y1="0" x2="30"  y2="80" stroke="#1a1a1a" stroke-width="0.6"/>
+  <line x1="60"  y1="0" x2="60"  y2="80" stroke="#1a1a1a" stroke-width="0.6"/>
+  <line x1="90"  y1="0" x2="90"  y2="80" stroke="#1a1a1a" stroke-width="0.6"/>
+  <line x1="120" y1="0" x2="120" y2="80" stroke="#1a1a1a" stroke-width="0.6"/>
+  <!-- Horizontal lines -->
+  <line x1="0" y1="0"  x2="120" y2="0"  stroke="#1a1a1a" stroke-width="0.6"/>
+  <line x1="0" y1="40" x2="120" y2="40" stroke="#1a1a1a" stroke-width="0.6"/>
+  <line x1="0" y1="80" x2="120" y2="80" stroke="#1a1a1a" stroke-width="0.6"/>
+  <!-- Center circle hint -->
+  <circle cx="60" cy="40" r="18" fill="none" stroke="#1a1a1a" stroke-width="0.5"/>
+  <!-- Center spot -->
+  <circle cx="60" cy="40" r="1.5" fill="#1a1a1a" opacity="0.6"/>
+  <!-- Penalty box hints -->
+  <rect x="10" y="15" width="30" height="50" fill="none" stroke="#1a1a1a" stroke-width="0.4"/>
+  <rect x="80" y="15" width="30" height="50" fill="none" stroke="#1a1a1a" stroke-width="0.4"/>
+</svg>

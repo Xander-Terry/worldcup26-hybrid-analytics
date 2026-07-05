@@ -9,6 +9,8 @@ import type { GlobalAxis, GlobalPlayer } from "@/lib/types"
 import { PlayerAvatar } from "@/components/shared/PlayerAvatar"
 import { ClusterBadge } from "@/components/shared/ClusterBadge"
 import { RadarSkeleton } from "@/components/shared/LoadingSkeleton"
+import { WC26Card } from "@/components/global/WC26Card"
+
 
 type TickProps = {
   x?:       string | number
@@ -41,7 +43,7 @@ type Props = {
 export function GlobalRadarChart({ primary, compare }: Props) {
   if (!primary) {
     return (
-      <div className="rounded-xl border border-[#E2E8F0] bg-white p-4">
+      <div className="p-4">
         <p className="text-sm font-semibold text-[#0F172A] mb-1">Performance Radar</p>
         <p className="text-xs text-[#64748B] mb-4">Select a player from the leaderboard</p>
         <RadarSkeleton />
@@ -65,79 +67,81 @@ export function GlobalRadarChart({ primary, compare }: Props) {
   }))
 
   return (
-    <div className="rounded-xl border border-[#E2E8F0] bg-white p-4">
-      <div className="flex items-start justify-between mb-4">
-        <div>
-          <p className="text-sm font-semibold text-[#0F172A] mb-1">Performance Radar</p>
-          <PlayerAvatar
-            name={primary.name}
-            nationality={primary.nationality}
-            position={primary.position}
-            mode="global"
+    <WC26Card>
+      <div className="p-4">
+        <div className="flex items-start justify-between mb-4">
+          <div>
+            <p className="text-sm font-semibold text-[#0F172A] mb-1">Performance Radar</p>
+            <PlayerAvatar
+              name={primary.name}
+              nationality={primary.nationality}
+              position={primary.position}
+              mode="global"
+            />
+          </div>
+          <ClusterBadge
+            clusterId={primary.cluster_id}
+            archetypeLabel={primary.archetype_label}
           />
         </div>
-        <ClusterBadge
-          clusterId={primary.cluster_id}
-          archetypeLabel={primary.archetype_label}
-        />
-      </div>
 
-      {compare && (
-        <div className="flex items-center gap-4 mb-3">
-          <div className="flex items-center gap-1.5">
-            <div className="h-2 w-6 rounded-full bg-[#2563EB]" />
-            <span className="text-[10px] text-[#64748B] font-mono">
-              {primary.name.split(" ").pop()}
-            </span>
+        {compare && (
+          <div className="flex items-center gap-4 mb-3">
+            <div className="flex items-center gap-1.5">
+              <div className="h-2 w-6 rounded-full bg-[#2563EB]" />
+              <span className="text-[10px] text-[#64748B] font-mono">
+                {primary.name.split(" ").pop()}
+              </span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="h-2 w-6 rounded-full bg-[#f59e0b]" />
+              <span className="text-[10px] text-[#64748B] font-mono">
+                {compare.name.split(" ").pop()}
+              </span>
+            </div>
           </div>
-          <div className="flex items-center gap-1.5">
-            <div className="h-2 w-6 rounded-full bg-[#f59e0b]" />
-            <span className="text-[10px] text-[#64748B] font-mono">
-              {compare.name.split(" ").pop()}
-            </span>
-          </div>
-        </div>
-      )}
+        )}
 
-      <ResponsiveContainer width="100%" height={240}>
-        <RadarChart data={chartData} margin={{ top: 10, right: 20, bottom: 10, left: 20 }}>
-          <PolarGrid gridType="polygon" stroke="#E2E8F0" />
-          <PolarAngleAxis
-            dataKey="axis"
-            tick={(props: TickProps) => <AxisTick {...props} />}
-          />
-          <Radar
-            name={primary.name}
-            dataKey="primary"
-            stroke="#2563EB"
-            fill="#2563EB"
-            fillOpacity={0.25}
-            strokeWidth={2}
-            dot={false}
-          />
-          {compare && compareData && (
+        <ResponsiveContainer width="100%" height={240}>
+          <RadarChart data={chartData} margin={{ top: 10, right: 20, bottom: 10, left: 20 }}>
+            <PolarGrid gridType="polygon" stroke="#E2E8F0" />
+            <PolarAngleAxis
+              dataKey="axis"
+              tick={(props: TickProps) => <AxisTick {...props} />}
+            />
             <Radar
-              name={compare.name}
-              dataKey="compare"
-              stroke="#f59e0b"
-              fill="#f59e0b"
-              fillOpacity={0.15}
+              name={primary.name}
+              dataKey="primary"
+              stroke="#2563EB"
+              fill="#2563EB"
+              fillOpacity={0.25}
               strokeWidth={2}
               dot={false}
             />
-          )}
-          <Tooltip
-            formatter={(value: unknown, name: unknown) => [String(value), String(name)]}
-              contentStyle={{
-              background:   "#fff",
-              border:       "1px solid #E2E8F0",
-              borderRadius: 8,
-              fontSize:     11,
-              fontFamily:   "DM Mono, monospace",
-            }}
-          />
-        </RadarChart>
-      </ResponsiveContainer>
-    </div>
+            {compare && compareData && (
+              <Radar
+                name={compare.name}
+                dataKey="compare"
+                stroke="#f59e0b"
+                fill="#f59e0b"
+                fillOpacity={0.15}
+                strokeWidth={2}
+                dot={false}
+              />
+            )}
+            <Tooltip
+              formatter={(value: unknown, name: unknown) => [String(value), String(name)]}
+                contentStyle={{
+                background:   "#fff",
+                border:       "1px solid #E2E8F0",
+                borderRadius: 8,
+                fontSize:     11,
+                fontFamily:   "DM Mono, monospace",
+              }}
+            />
+          </RadarChart>
+        </ResponsiveContainer>
+      </div>
+    </WC26Card>
   )
 }

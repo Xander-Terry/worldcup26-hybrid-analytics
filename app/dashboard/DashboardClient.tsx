@@ -1,5 +1,7 @@
 ﻿"use client"
 
+import { GlobalModeCanvas } from "@/components/global/GlobalModeCanvas"
+
 import { useState, useRef, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Users, Activity, Trophy } from "lucide-react"
@@ -146,122 +148,125 @@ export function DashboardClient({ globalPlayers, blStrikers, summary }: Props) {
                 transition={{ duration: 0.22 }}
                 className="space-y-6"
               >
-                {/* Stat cards */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <StatCard
-                    mode="global"
-                    label="Total Players"
-                    value={summary.totalPlayers.toLocaleString()}
-                    subline="+24 from qualifier data"
-                    icon={<Users className="h-4 w-4" />}
-                  />
-                  <StatCard
-                    mode="global"
-                    label="Participant Nations"
-                    value={48}
-                    subline="Four Debut Countries"
-                    icon={<Activity className="h-4 w-4" />}
-                  />
-                  <StatCard
-                    mode="global"
-                    label="Top Scorer"
-                    value={
-                      summary.topScorer
-                        ? summary.topScorer.name.split(" ").pop() ?? summary.topScorer.name
-                        : "—"
-                    }
-                    subline={
-                      summary.topScorer
-                        ? `${summary.topScorer.goals} goals · ${summary.topScorer.assists} assists`
-                        : undefined
-                    }
-                    icon={<Trophy className="h-4 w-4" />}
-                  />
-                </div>
-
-                {/* Main content — leaderboard + radar */}
-                <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-                  {/* Leaderboard (3/5) */}
-                  <div className="lg:col-span-3">
-                    <PlayerLeaderboard
-                      players={globalPlayers}
-                      selectedId={selectedPlayer?.id}
-                      onSelectPlayer={p => {
-                        setSelectedPlayer(p)
-                        setComparePlayer(null)
-                      }}
-                    />
-                  </div>
-
-                  {/* Radar + compare (2/5) */}
-                  <div className="lg:col-span-2 space-y-4">
-                    <GlobalRadarChart
-                      primary={selectedPlayer}
-                      compare={comparePlayer}
-                    />
-                    {selectedPlayer && (
-                      <PlayerCompare
-                        players={globalPlayers}
-                        primaryId={selectedPlayer.id}
-                        selected={comparePlayer}
-                        onSelect={setComparePlayer}
+                  <GlobalModeCanvas>
+                      <div className="space-y-6">
+                    {/* Stat cards */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      <StatCard
+                        mode="global"
+                        label="Total Players"
+                        value={summary.totalPlayers.toLocaleString()}
+                        subline="+24 from qualifier data"
+                        icon={<Users className="h-4 w-4" />}
                       />
-                    )}
-                  </div>
-                </div>
+                      <StatCard
+                        mode="global"
+                        label="Participant Nations"
+                        value={48}
+                        subline="Four Debut Countries"
+                        icon={<Activity className="h-4 w-4" />}
+                      />
+                      <StatCard
+                        mode="global"
+                        label="Top Scorer"
+                        value={
+                          summary.topScorer
+                            ? summary.topScorer.name.split(" ").pop() ?? summary.topScorer.name
+                            : "—"
+                        }
+                        subline={
+                          summary.topScorer
+                            ? `${summary.topScorer.goals} goals · ${summary.topScorer.assists} assists`
+                            : undefined
+                        }
+                        icon={<Trophy className="h-4 w-4" />}
+                      />
+                    </div>
 
-                {/* Advanced analytics tabs */}
-                <div className="rounded-xl border border-[#E2E8F0] bg-white overflow-hidden">
-                  {/* Tab bar */}
-                  <div className="flex border-b border-[#E2E8F0]">
-                    {(["clusters", "compare"] as const).map(tab => (
-                      <button
-                        key={tab}
-                        onClick={() => setAdvancedTab(tab)}
-                        className="px-5 py-3 text-xs font-semibold transition-colors"
-                        style={{
-                          color:         advancedTab === tab ? "#2563EB" : "#64748B",
-                          background:    advancedTab === tab ? "#EFF6FF" : "transparent",
-                          borderBottom:  advancedTab === tab ? "2px solid #2563EB" : "2px solid transparent",
-                        }}
-                      >
-                        {tab === "clusters" ? "Cluster Analysis" : "Player Comparison"}
-                      </button>
-                    ))}
-                  </div>
-
-                  <AnimatePresence mode="wait">
-                    <motion.div
-                      key={advancedTab}
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      transition={{ duration: 0.14 }}
-                      className="p-4"
-                    >
-                      {advancedTab === "clusters" ? (
-                        <ClusterScatterplot
+                    {/* Main content — leaderboard + radar */}
+                    <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+                      {/* Leaderboard (3/5) */}
+                      <div className="lg:col-span-3">
+                        <PlayerLeaderboard
                           players={globalPlayers}
                           selectedId={selectedPlayer?.id}
-                          onSelect={setSelectedPlayer}
+                          onSelectPlayer={p => {
+                            setSelectedPlayer(p)
+                            setComparePlayer(null)
+                          }}
                         />
-                      ) : (
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                          <GlobalRadarChart
-                            primary={selectedPlayer}
-                            compare={comparePlayer}
-                          />
+                      </div>
+
+                      {/* Radar + compare (2/5) */}
+                      <div className="lg:col-span-2 space-y-4">
+                        <GlobalRadarChart
+                          primary={selectedPlayer}
+                          compare={comparePlayer}
+                        />
+                        {selectedPlayer && (
                           <PlayerCompare
                             players={globalPlayers}
-                            primaryId={selectedPlayer?.id ?? null}
+                            primaryId={selectedPlayer.id}
                             selected={comparePlayer}
                             onSelect={setComparePlayer}
                           />
-                        </div>
-                      )}
-                    </motion.div>
-                  </AnimatePresence>
-                </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Advanced analytics tabs */}
+                      <div className="relative rounded-xl border border-[#E2E8F0] bg-white overflow-visible">                      {/* Tab bar */}
+                      <div className="flex border-b border-[#E2E8F0]">
+                        {(["clusters", "compare"] as const).map(tab => (
+                          <button
+                            key={tab}
+                            onClick={() => setAdvancedTab(tab)}
+                            className="px-5 py-3 text-xs font-semibold transition-colors"
+                            style={{
+                              color:         advancedTab === tab ? "#2563EB" : "#64748B",
+                              background:    advancedTab === tab ? "#EFF6FF" : "transparent",
+                              borderBottom:  advancedTab === tab ? "2px solid #2563EB" : "2px solid transparent",
+                            }}
+                          >
+                            {tab === "clusters" ? "Cluster Analysis" : "Player Comparison"}
+                          </button>
+                        ))}
+                      </div>
+
+                      <AnimatePresence mode="wait">
+                        <motion.div
+                          key={advancedTab}
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          exit={{ opacity: 0 }}
+                          transition={{ duration: 0.14 }}
+                          className="p-4"
+                        >
+                          {advancedTab === "clusters" ? (
+                            <ClusterScatterplot
+                              players={globalPlayers}
+                              selectedId={selectedPlayer?.id}
+                              onSelect={setSelectedPlayer}
+                            />
+                          ) : (
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                              <GlobalRadarChart
+                                primary={selectedPlayer}
+                                compare={comparePlayer}
+                              />
+                              <PlayerCompare
+                                players={globalPlayers}
+                                primaryId={selectedPlayer?.id ?? null}
+                                selected={comparePlayer}
+                                onSelect={setComparePlayer}
+                              />
+                            </div>
+                          )}
+                        </motion.div>
+                      </AnimatePresence>
+                    </div>
+                  </div>
+                </GlobalModeCanvas>
               </motion.div>
             )}
 

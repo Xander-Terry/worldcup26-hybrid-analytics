@@ -7,7 +7,7 @@ import {
 import { CLUSTER_COLORS } from "@/lib/types"
 import type { GlobalPlayer } from "@/lib/types"
 import { ClusterBadge } from "@/components/shared/ClusterBadge"
-
+import { WC26Card } from "@/components/global/WC26Card"
 type TooltipPayloadItem = {
   payload: GlobalPlayer
 }
@@ -78,60 +78,62 @@ export function ClusterScatterplot({ players, selectedId, onSelect }: Props) {
   const archetypes = getArchetypes(players)
 
   return (
-    <div className="rounded-xl border border-[#E2E8F0] bg-white p-4">
-      <p className="text-sm font-semibold text-[#0F172A] mb-1">
-        Player Style Clusters — UMAP Projection
-      </p>
-      <p className="text-[10px] text-[#64748B] font-mono mb-4">
-        Each dot = one player · color = archetype cluster
-      </p>
+    <WC26Card>
+      <div className="p-4">
+        <p className="text-sm font-semibold text-[#0F172A] mb-1">
+          Player Style Clusters — UMAP Projection
+        </p>
+        <p className="text-[10px] text-[#64748B] font-mono mb-4">
+          Each dot = one player · color = archetype cluster
+        </p>
 
-      <ResponsiveContainer width="100%" height={340}>
-        <ScatterChart margin={{ top: 8, right: 8, bottom: 8, left: 0 }}>
-          <CartesianGrid stroke="#E2E8F0" strokeDasharray="3 3" />
-          <XAxis
-            dataKey="umap_x"
-            type="number"
-            domain={["auto", "auto"]}
-            tick={{ fontSize: 9, fontFamily: "DM Mono, monospace", fill: "#94A3B8" }}
-            tickLine={false}
-            axisLine={false}
-          />
-          <YAxis
-            dataKey="umap_y"
-            type="number"
-            domain={["auto", "auto"]}
-            tick={{ fontSize: 9, fontFamily: "DM Mono, monospace", fill: "#94A3B8" }}
-            tickLine={false}
-            axisLine={false}
-          />
-          <Tooltip content={<CustomTooltip />} />
-          <Scatter
-            data={players}
-            shape={(props: DotProps) => (
-              <ScatterDot {...props} selectedId={selectedId} />
-            )}
-            onClick={(point: { payload?: GlobalPlayer }) => {
-              if (point?.payload) {
-                onSelect?.(point.payload)
-              }
-            }}
-          >
-            {players.map(p => (
-              <Cell
-                key={p.id}
-                fill={CLUSTER_COLORS[p.cluster_id] ?? "#94a3b8"}
-              />
-            ))}
-          </Scatter>
-        </ScatterChart>
-      </ResponsiveContainer>
+        <ResponsiveContainer width="100%" height={340}>
+          <ScatterChart margin={{ top: 8, right: 8, bottom: 8, left: 0 }}>
+            <CartesianGrid stroke="#E2E8F0" strokeDasharray="3 3" />
+            <XAxis
+              dataKey="umap_x"
+              type="number"
+              domain={["auto", "auto"]}
+              tick={{ fontSize: 9, fontFamily: "DM Mono, monospace", fill: "#94A3B8" }}
+              tickLine={false}
+              axisLine={false}
+            />
+            <YAxis
+              dataKey="umap_y"
+              type="number"
+              domain={["auto", "auto"]}
+              tick={{ fontSize: 9, fontFamily: "DM Mono, monospace", fill: "#94A3B8" }}
+              tickLine={false}
+              axisLine={false}
+            />
+            <Tooltip content={<CustomTooltip />} />
+            <Scatter
+              data={players}
+              shape={(props: DotProps) => (
+                <ScatterDot {...props} selectedId={selectedId} />
+              )}
+              onClick={(point: { payload?: GlobalPlayer }) => {
+                if (point?.payload) {
+                  onSelect?.(point.payload)
+                }
+              }}
+            >
+              {players.map(p => (
+                <Cell
+                  key={p.id}
+                  fill={CLUSTER_COLORS[p.cluster_id] ?? "#94a3b8"}
+                />
+              ))}
+            </Scatter>
+          </ScatterChart>
+        </ResponsiveContainer>
 
-      <div className="flex flex-wrap gap-2 mt-3">
-        {archetypes.map(([cid, label]) => (
-          <ClusterBadge key={cid} clusterId={cid} archetypeLabel={label} />
-        ))}
+        <div className="flex flex-wrap gap-2 mt-3">
+          {archetypes.map(([cid, label]) => (
+            <ClusterBadge key={cid} clusterId={cid} archetypeLabel={label} />
+          ))}
+        </div>
       </div>
-    </div>
+    </WC26Card>
   )
 }

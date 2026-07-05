@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 500" width="900" height="500" preserveAspectRatio="none">
+
+  <!-- BAR 1 — Neon Green (base layer) -->
+  <path d="M0 120 C180 180, 360 160, 900 280 L900 120 Z"
+        fill="#8df702" />
+
+  <!-- BAR 2 — Vivid Yellow -->
+  <path d="M60 100 C240 160, 420 140, 900 260 L900 100 Z"
+        fill="#F3BC00" />
+
+  <!-- BAR 3 — Torch Red -->
+  <path d="M120 80 C300 140, 480 120, 900 240 L900 80 Z"
+        fill="#E61D25" />
+
+  <!-- BAR 4 — Electric Blue -->
+  <path d="M180 60 C360 120, 540 100, 900 220 L900 60 Z"
+        fill="#2C86FF" />
+
+  <!-- BAR 5 — Hermes Blue -->
+  <path d="M240 40 C420 100, 600 80, 900 200 L900 40 Z"
+        fill="#2A398D" />
+
+  <!-- BAR 6 — Neon Green echo -->
+  <path d="M300 20 C480 80, 660 60, 900 180 L900 20 Z"
+        fill="#8df702" />
+
+</svg>
