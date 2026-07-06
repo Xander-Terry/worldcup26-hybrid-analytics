@@ -35,7 +35,7 @@ def extract_stats(tags):
 
 def extract_player(actor):
     """
-    Build clean player row
+    Build clean player row from GameDay story format
     """
     key = actor.get("key", {})
     name = actor.get("name", {})
@@ -66,9 +66,78 @@ def extract_player(actor):
 
 
 # -----------------------------
+# Parse Power Rankings (NEW)
+# -----------------------------
+def parse_power_rankings(path: Path):
+    with open(path, "r", encoding="utf-8") as f:
+        data = json.load(f)
+
+    rows = []
+    competition_stage = data.get("competitionStage")
+
+    # Outfield players
+    for p in data.get("outfieldPlayers", []):
+        row = {
+            "player_id": p.get("playerId"),
+            "player_name": next((n["description"] for n in p.get("playerName", []) if n["locale"] == "en-GB"), None),
+            "team_id": p.get("teamId"),
+            "team": next((n["description"] for n in p.get("teamName", []) if n["locale"] == "en-GB"), None),
+
+            # Ranking fields
+            "attacking_rank": p.get("attackingRank"),
+            "defensive_rank": p.get("defensiveRank"),
+            "creativity_rank": p.get("creativityRank"),
+
+            "attacking_score": p.get("attackingScore"),
+            "defensive_score": p.get("defensiveScore"),
+            "creativity_score": p.get("creativityScore"),
+
+            "competition_stage": competition_stage,
+
+            "source_tab": "power_rankings",
+            "story_id": None,
+            "classification": None,
+        }
+        rows.append(row)
+
+    # Goalkeepers (same structure)
+    for p in data.get("goalkeepers", []):
+        row = {
+            "player_id": p.get("playerId"),
+            "player_name": next((n["description"] for n in p.get("playerName", []) if n["locale"] == "en-GB"), None),
+            "team_id": p.get("teamId"),
+            "team": next((n["description"] for n in p.get("teamName", []) if n["locale"] == "en-GB"), None),
+
+            # Ranking fields
+            "attacking_rank": p.get("attackingRank"),
+            "defensive_rank": p.get("defensiveRank"),
+            "creativity_rank": p.get("creativityRank"),
+
+            "attacking_score": p.get("attackingScore"),
+            "defensive_score": p.get("defensiveScore"),
+            "creativity_score": p.get("creativityScore"),
+
+            "competition_stage": competition_stage,
+
+            "source_tab": "power_rankings",
+            "story_id": None,
+            "classification": None,
+        }
+        rows.append(row)
+
+    return pd.DataFrame(rows)
+
+
+
+# -----------------------------
 # Parse one file
 # -----------------------------
 def parse_file(path: Path):
+    # NEW: detect power rankings file
+    if path.stem == "power_rankings":
+        return parse_power_rankings(path)
+
+    # OLD: GameDay story format
     with open(path, "r", encoding="utf-8") as f:
         data = json.load(f)
 
@@ -97,10 +166,10 @@ def parse_file(path: Path):
 
     return df
 
+
 # -----------------------------
 # Main runner
 # -----------------------------
-
 def main():
     all_dfs = []
 

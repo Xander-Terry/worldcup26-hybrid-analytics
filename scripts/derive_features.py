@@ -2,6 +2,12 @@
 import numpy as np
 from pathlib import Path
 
+PR_CSV = Path("data/processed/power_rankings.csv")
+df_pr = pd.read_csv(PR_CSV)
+
+stage_value = df_pr["competition_stage"].dropna().iloc[0]
+
+
 def debug_player(frame, name, label):
     match = frame[frame["player_name"].str.contains(name, case=False, na=False)]
     if len(match) == 0:
@@ -146,11 +152,67 @@ def apply_global_axis_floor(frame: pd.DataFrame, axes: list[str]) -> pd.DataFram
 
     return f
 
-
 # ── 1. Load ───────────────────────────────────────────────────────────────────
 print("\n[1/7] Loading master_fifa_clean.csv...")
 df = pd.read_csv(INPUT)
+
+df["competition_stage"] = stage_value
+
+# FDH ranking fields → numeric
+df["attacking_rank"]   = pd.to_numeric(df["attacking_rank"], errors="coerce")
+df["defensive_rank"]   = pd.to_numeric(df["defensive_rank"], errors="coerce")
+df["creativity_rank"]  = pd.to_numeric(df["creativity_rank"], errors="coerce")
+
+df["attacking_score"]  = pd.to_numeric(df["attacking_score"], errors="coerce")
+df["defensive_score"]  = pd.to_numeric(df["defensive_score"], errors="coerce")
+df["creativity_score"] = pd.to_numeric(df["creativity_score"], errors="coerce")
+
+# Global FDH rank (lower = better)
+df["global_rank"] = (
+    df["attacking_rank"] * 0.6 +
+    df["creativity_rank"] * 0.25 +
+    df["defensive_rank"] * 0.15
+)
+
+# Global FDH score (higher = better)
+df["global_score"] = (
+    df["attacking_score"] * 0.6 +
+    df["creativity_score"] * 0.25 +
+    df["defensive_score"] * 0.15
+)
+
+# FDH tier system (no stage multiplier needed)
+def fdh_tier(rank):
+    if pd.isna(rank): return "None"
+    if rank <= 10:   return "S"
+    if rank <= 50:   return "A"
+    if rank <= 150:  return "B"
+    if rank <= 300:  return "C"
+    return "D"
+
+df["fdh_tier"] = df["global_rank"].apply(fdh_tier)
+
+FDH_TIER_MULT = {
+    "S":    1.30,
+    "A":    1.20,
+    "B":    1.10,
+    "C":    1.00,
+    "D":    0.90,
+    "None": 1.00,
+}
+
+df["fdh_tier_multiplier"] = df["fdh_tier"].map(FDH_TIER_MULT)
+
+# Active players = players still in FDH feed
+df["is_active"] = df["attacking_rank"].notnull()
+
+# Final multiplier (no stage multiplier)
+df["final_multiplier"] = df["fdh_tier_multiplier"]
+df.loc[df["is_active"] == False, "final_multiplier"] = 1.00
+
 print(f"  Loaded: {len(df)} players, {len(df.columns)} columns")
+
+
 
 # ── 2. Unit conversions ───────────────────────────────────────────────────────
 print("\n[2/7] Unit conversions...")
@@ -296,7 +358,29 @@ def compute_global_axes(f: pd.DataFrame) -> pd.DataFrame:
         (p("speed_runs_p90"), 0.25),
     ])
 
+        # ── Rank-tier scaling (BEFORE normalization) ──────────────────────────────
+    from power_ranking import compute_global_rank, apply_global_tier_scaling
+
+    GLOBAL_AXIS_COLS = [
+        "attacking_threat", "chance_creation", "ball_progression",
+        "defensive_actions", "possession_security", "physical_impact"
+    ]
+
+    # Compute preliminary rank on raw (un-normalized) axis sums
+    prelim_rank = compute_global_rank(frame, GLOBAL_AXIS_COLS)
+    frame["global_rank_prelim"] = prelim_rank
+
+    print(f"\n  Global rank-tier scaling applied")
+    print(f"  Top 10 players by raw combined score:")
+    top10 = frame.nlargest(10, GLOBAL_AXIS_COLS)
+    for _, row in top10.iterrows():
+        print(f"    Rank {int(row['global_rank_prelim'])}: {row['player_name']}  combined={sum(row[c] for c in GLOBAL_AXIS_COLS):.1f}")
+
+    # NOW normalize — scaling is absorbed, max stays 100
+    for ax in GLOBAL_AXIS_COLS:
+        frame[ax] = mm_norm(frame[ax])
     print("  Axis ranges (pre-floor):")
+
     for ax in GLOBAL_AXES:
         s = frame[ax]
         print(f"    {ax:<25} {s.min():.1f}-{s.max():.1f}  mean={s.mean():.1f}")
@@ -329,6 +413,27 @@ def compute_global_axes(f: pd.DataFrame) -> pd.DataFrame:
     return frame
 
 df_out = compute_global_axes(df_out)
+
+# Replace FDH global_rank with axis-based rank
+from power_ranking import compute_global_rank
+
+GLOBAL_AXIS_COLS = GLOBAL_AXES
+df_out["global_rank"] = compute_global_rank(df_out, GLOBAL_AXIS_COLS)
+# Replace FDH global_score with axis-based score
+df_out["global_score"] = df_out[GLOBAL_AXES].mean(axis=1)
+df_out["global_score"] = mm_norm(df_out["global_score"])
+
+
+# Apply rank-tier scaling BEFORE normalization
+for ax in GLOBAL_AXES:
+    df_out[ax] = df_out[ax] * df_out["final_multiplier"]
+
+# Renormalize to keep axes ≤ 100
+for ax in GLOBAL_AXES:
+    df_out[ax] = mm_norm(df_out[ax])
+
+df_out["global_score"] = mm_norm(df_out["global_score"])
+
 
 # ── 6. Blue Lock + floor + grades + ego ───────────────────────────────────────
 print("\n[6/7] Blue Lock scores, floor, grades, ego map (FW)...")
@@ -391,8 +496,42 @@ def compute_bluelock(f: pd.DataFrame) -> pd.DataFrame:
     debug_player(frame, "Haaland", "RAW (before normalization)")
     debug_player(frame, "Rahimi",  "RAW (before normalization)")
 
-    for cat in BL_CATS:
-        frame[cat] = mm_norm(frame[f"{cat}_raw"])
+    # ── BL rank-tier scaling (BEFORE normalization) ───────────────────────────
+    from power_ranking import (
+        compute_striker_global_score, compute_striker_global_rank,
+        apply_bl_tier_scaling
+    )
+
+    BL_CAT_COLS = ["shoot_raw", "offense_raw", "dribble_raw", "pass_raw", "speed_raw", "defense_raw"]
+
+    # Compute striker global score + rank from raw category scores
+    temp_scores = frame[[c for c in BL_CAT_COLS if c in frame.columns]].copy()
+    temp_scores.columns = [c.replace("_raw","") for c in temp_scores.columns]
+    frame["striker_global_score"] = compute_striker_global_score(temp_scores, list(temp_scores.columns))
+
+    # --- Goal-based boost (Blue Lock philosophy) ---
+    # Goals are the ultimate currency, but only a subtle influence.
+    if "goals_p90" in frame.columns:
+        goal_pct = pct_rank(frame["goals_p90"])  # percentile 0–100
+        goal_boost = goal_pct * 0.15          # 15% weighting
+        frame["striker_global_score"] += goal_boost
+    else:
+        goal_pct = pd.Series(0, index=frame.index)
+    # ------------------------------------------------    
+
+    frame["striker_global_rank"]  = compute_striker_global_rank(frame["striker_global_score"])
+
+
+    print(f"\n  BL rank-tier scaling applied")
+    print(f"  Top 10 strikers by striker_global_score:")
+    top10_bl = frame.nlargest(10, "striker_global_score")
+    for _, row in top10_bl.iterrows():
+        print(f"    Rank {int(row['striker_global_rank'])}: {row['player_name']}  score={row['striker_global_score']:.1f}")
+
+    # NOW normalize each category — scaling absorbed, max stays 100
+    for cat in ["shoot_raw","offense_raw","dribble_raw","pass_raw","speed_raw","defense_raw"]:
+        base = cat.replace("_raw", "")
+        frame[base] = mm_norm(frame[cat])
 
     frame["overall_raw"]   = sum(frame[cat] * w for cat, w in BL_OVERALL_WEIGHTS.items())
     frame["overall_score"] = mm_norm(frame["overall_raw"])
@@ -475,6 +614,57 @@ def compute_ego_map(f: pd.DataFrame) -> pd.DataFrame:
     return frame
 
 df_fw = compute_bluelock(df_fw)
+
+
+# Recompute BL overall after scaling
+df_fw["overall_raw"]   = sum(df_fw[cat] * w for cat, w in BL_OVERALL_WEIGHTS.items())
+df_fw["overall_score"] = mm_norm(df_fw["overall_raw"])
+df_fw["overall_grade"] = percentile_grade(df_fw["overall_score"])
+
+# Apply FDH multiplier to BL overall score ONLY
+df_fw["overall_score"] = df_fw["overall_score"] * df_fw["final_multiplier"]
+df_fw["overall_score"] = mm_norm(df_fw["overall_score"])
+df_fw["overall_grade"] = percentile_grade(df_fw["overall_score"])
+
+
+# ── Blue Lock FDH rank + score ────────────────────────────────────────
+df_fw["blue_lock_rank"] = (
+    df_fw["attacking_rank"] * 0.6 +
+    df_fw["creativity_rank"] * 0.3 +
+    df_fw["defensive_rank"] * 0.1
+)
+
+df_fw["blue_lock_score"] = (
+    df_fw["attacking_score"] * 0.6 +
+    df_fw["creativity_score"] * 0.3 +
+    df_fw["defensive_score"] * 0.1
+)
+
+# ── Blue Lock tier system ─────────────────────────────────────────────
+def bl_tier(rank):
+    if pd.isna(rank): return "None"
+    if rank <= 20:   return "BL-S"
+    if rank <= 80:   return "BL-A"
+    if rank <= 180:  return "BL-B"
+    if rank <= 350:  return "BL-C"
+    return "BL-D"
+
+df_fw["blue_lock_tier"] = df_fw["blue_lock_rank"].apply(bl_tier)
+
+BL_MULT = {
+    "BL-S": 1.35,
+    "BL-A": 1.20,
+    "BL-B": 1.05,
+    "BL-C": 1.00,
+    "BL-D": 0.85,
+    "None": 1.00,
+}
+
+df_fw["blue_lock_multiplier"] = df_fw["blue_lock_tier"].map(BL_MULT)
+df_fw["blue_lock_final_score"] = df_fw["overall_score"] * df_fw["blue_lock_multiplier"]
+df_fw["blue_lock_final_score"] = mm_norm(df_fw["blue_lock_final_score"])
+
+
 df_fw = compute_ego_map(df_fw)
 
 # ── 7. Save ────────────────────────────────────────────────────────────────────
@@ -485,6 +675,13 @@ bl_output_cols = [
     "grade_shoot","grade_offense","grade_dribble",
     "grade_pass","grade_speed","grade_defense",
     "overall_score","overall_grade","ego_x","ego_y",
+    "blue_lock_rank",
+    "blue_lock_score",
+    "blue_lock_tier",
+    "blue_lock_multiplier",
+    "blue_lock_final_score",
+    "striker_global_score",
+    "striker_global_rank",
 ]
 axis_output_cols = [
     "goals_p90","assists_p90","xg_p90","attempt_at_goal_p90",
@@ -495,6 +692,12 @@ axis_output_cols = [
     "receptions_pressure_p90","offers_in_behind_p90",
     "receptions_in_behind_p90","sprints_p90","speed_runs_p90",
     "distance_p90","total_distance_km",
+    "global_rank",
+    "global_score",
+    "fdh_tier",
+    "fdh_tier_multiplier",
+    "final_multiplier",
+
 ] + GLOBAL_AXES
 
 df_features = df_all.copy()
@@ -503,8 +706,14 @@ df_features["minutes"]           = to_num(df_features["total_competition_minutes
 
 merge_axis = [c for c in axis_output_cols if c in df_out.columns]
 df_features = df_features.merge(
-    df_out[["player_id"] + merge_axis], on="player_id", how="left"
+    df_out[["player_id"] + merge_axis + [
+        "global_rank","global_score",
+        "fdh_tier","fdh_tier_multiplier",
+        "final_multiplier"
+    ]],
+    on="player_id", how="left"
 )
+
 df_features = df_features.merge(
     df_fw[["player_id"] + bl_output_cols], on="player_id", how="left"
 )

@@ -10,6 +10,7 @@ import os
 import sys
 import requests
 import pandas as pd
+import numpy as np
 from pathlib import Path
 from dotenv import load_dotenv
 
@@ -93,6 +94,7 @@ def upsert_batch(table: str, records: list, conflict_col: str = "player_id"):
 
 
 
+
 # ── Load ──────────────────────────────────────────────────────────────────────
 print("\n[1/6] Loading feature dataset...")
 if not FEATURES_CSV.exists():
@@ -107,6 +109,40 @@ df_out = df[~df["position"].str.upper().str.contains("GK", na=False)].copy()
 df_fw  = df[ df["position"].str.upper().str.contains("FW", na=False)].copy()
 print(f"  Outfield: {len(df_out)} | FW: {len(df_fw)}")
 
+print("DEBUG: competition_stage exists:", "competition_stage" in df.columns)
+print(df["competition_stage"].head())
+
+# ── Update tournament stage ───────────────────────────────────────────────
+competition_stage = df.get("competition_stage")
+stage_value = None
+
+if competition_stage is not None:
+    cleaned = competition_stage.dropna()
+    if cleaned.size > 0:
+        stage_value = cleaned.iloc[0]
+
+if stage_value:
+    print(f"  Tournament Stage: {stage_value}")
+
+    resp = requests.post(
+        f"{SUPABASE_URL}/rest/v1/tournament_meta",
+        headers={
+            **HEADERS,
+            "Prefer": "resolution=merge-duplicates"
+        },
+        json=[{
+            "key": "stage",
+            "value": stage_value
+        }]
+    )
+
+    print("Stage upsert response:", resp.status_code, resp.text)
+else:
+    print("  Tournament Stage: NONE FOUND")
+
+
+
+
 # ── Upsert players ────────────────────────────────────────────────────────────
 print("\n[2/6] Upserting players table...")
 player_records = []
@@ -117,6 +153,8 @@ for _, row in df.iterrows():
         "name":           str(row["player_name"]),
         "team":           str(row["team"]),
         "position":       str(row["position"]),
+        "is_active": bool(row.get("is_active")) if row.get("is_active") in [True, False] else None,
+
     })
 upsert_batch("players", player_records, conflict_col="fifa_player_id")
 
@@ -197,7 +235,7 @@ for _, row in df_out.iterrows():
         "assists_p90":              round(sf(row.get("assists_p90")),4),
         "xg_p90":                   round(sf(row.get("xg_p90")),4),
         "attempt_at_goal_p90":      round(sf(row.get("attempt_at_goal_p90")),4),
-        "attempt_at_goal_on_target_p90": round(sf(row.get("attempt_on_target_p90")),4),
+        "attempt_at_goal_on_target_p90": round(sf(row.get("attempt_at_goal_on_target_p90")),4),
         "attempt_inside_box_p90":   round(sf(row.get("attempt_inside_box_p90")),4),
         "corners_p90":              round(sf(row.get("corners_p90")),4),
         "crosses_p90":              round(sf(row.get("crosses_p90")),4),
@@ -210,7 +248,7 @@ for _, row in df_out.iterrows():
         "direct_pressures_p90":     round(sf(row.get("direct_pressures_p90")),4),
         "fouls_drawn_p90":          round(sf(row.get("fouls_drawn_p90")),4),
         "fouls_committed_p90":      round(sf(row.get("fouls_committed_p90")),4),
-        "receptions_under_pressure_p90": round(sf(row.get("receptions_pressure_p90")),4),
+        "receptions_under_pressure_p90": round(sf(row.get("receptions_under_pressure_p90")),4),
         "offers_in_behind_p90":     round(sf(row.get("offers_in_behind_p90")),4),
         "receptions_in_behind_p90": round(sf(row.get("receptions_in_behind_p90")),4),
         "sprints_p90":              round(sf(row.get("sprints_p90")),4),
@@ -225,8 +263,18 @@ for _, row in df_out.iterrows():
         "defensive_actions":        round(sf(row.get("defensive_actions")),2),
         "possession_security":      round(sf(row.get("possession_security")),2),
         "physical_impact":          round(sf(row.get("physical_impact")),2),
+         # FDH global ranking fields
+        "global_rank":              sf(row.get("global_rank")),
+        "global_score":             sf(row.get("global_score")),
+        "fdh_tier":                 str(row.get("fdh_tier")) if row.get("fdh_tier") else None,
+        "fdh_tier_multiplier":      sf(row.get("fdh_tier_multiplier")),
+        "final_multiplier":         sf(row.get("final_multiplier")),
+
     })
 upsert_batch("player_stats_global", global_records)
+
+
+
 
 # ── Upsert player_stats_bluelock ──────────────────────────────────────────────
 print("\n[5/6] Upserting player_stats_bluelock (FW only)...")
@@ -235,7 +283,10 @@ for _, row in df_fw.iterrows():
     pid = id_map.get(str(row["player_id"]))
     if not pid: continue
     # Only insert if BL scores were computed (not NaN)
-    if pd.isna(row.get("overall_score")): continue
+    
+
+
+    
     bl_records.append({
         "player_id":     pid,
         "shoot":         round(sf(row.get("shoot")),2),
@@ -254,6 +305,15 @@ for _, row in df_fw.iterrows():
         "overall_grade": str(row.get("overall_grade","G")),
         "ego_x":         round(sf(row.get("ego_x")),2),
         "ego_y":         round(sf(row.get("ego_y")),2),
+        # FDH-based BL ranking fields
+        "blue_lock_rank":        sf(row.get("blue_lock_rank")),
+        "blue_lock_score":       sf(row.get("blue_lock_score")),
+        "blue_lock_tier":        str(row.get("blue_lock_tier")) if row.get("blue_lock_tier") else None,
+        "blue_lock_multiplier":  sf(row.get("blue_lock_multiplier")),
+        "blue_lock_final_score": sf(row.get("blue_lock_final_score")),
+        "striker_global_rank":  si(row.get("striker_global_rank", 0)),
+        "striker_global_score": round(sf(row.get("striker_global_score", 0)), 2),
+        
     })
 upsert_batch("player_stats_bluelock", bl_records)
 

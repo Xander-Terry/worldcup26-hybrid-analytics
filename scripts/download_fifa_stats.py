@@ -122,6 +122,16 @@ def build_query(classification):
 
 
 # ----------------------------
+# FETCH POWER RANKINGS (NEW)
+# ----------------------------
+def fetch_power_rankings():
+    url = "https://fdh-api.fifa.com/v1/powerranking/season/285023.json"
+    r = requests.get(url, headers=HEADERS)
+    r.raise_for_status()
+    return r.json()
+
+
+# ----------------------------
 # MAIN PIPELINE
 # ----------------------------
 def main():
@@ -143,6 +153,19 @@ def main():
             print(f"FAILED {tab_name}: {e}")
 
         time.sleep(1)
+
+    # ----------------------------
+    # NEW: POWER RANKINGS
+    # ----------------------------
+    print("\n======================")
+    print("Downloading Power Rankings")
+    print("======================")
+
+    try:
+        pr_data = fetch_power_rankings()
+        save_tab("power_rankings", pr_data)
+    except Exception as e:
+        print(f"FAILED power_rankings: {e}")
 
 
 if __name__ == "__main__":

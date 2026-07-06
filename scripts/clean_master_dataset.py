@@ -98,6 +98,11 @@ def main():
     df = coerce_numeric_columns(df, meta_cols)
 
     # -----------------------------
+    # Step 3.5: Mark active vs eliminated players
+    # -----------------------------
+    df["is_active"] = df["attacking_rank"].notnull()
+
+    # -----------------------------
     # Step 4: Remove duplicate players
     # -----------------------------
     if "player_id" in df.columns:
@@ -110,6 +115,7 @@ def main():
     # -----------------------------
     # Step 5: Sort for readability
     # -----------------------------
+    df["position"] = df["position"].fillna("Unknown")
     df = df.sort_values(by=["team", "position", "player_name"])
 
     # -----------------------------
