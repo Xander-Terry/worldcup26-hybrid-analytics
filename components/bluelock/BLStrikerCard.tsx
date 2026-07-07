@@ -8,7 +8,25 @@ import { BLPlayerTag }    from "@/components/bluelock/BLPlayerTag"
 import { BLOverallGrade } from "@/components/bluelock/BLOverallGrade"
 import { BLLetterGrade }  from "@/components/bluelock/BLLetterGrade"
 import { StrikerCardSkeleton } from "@/components/shared/LoadingSkeleton"
-import { getFlag } from "@/lib/flags"
+
+
+function PentaRank({ rank }: { rank: number }) {
+  return (
+    <div className="relative w-12 h-12 flex items-center justify-center shrink-0">
+      <svg viewBox="0 0 100 100" className="w-full h-full text-[#2563EB]">
+        <polygon
+          points="50,5 93,38 76,90 24,90 7,38"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="8"
+        />
+      </svg>
+      <span className="absolute seven-segment-text text-[20px] font-bold z-10">
+        {rank}
+      </span>
+    </div>
+  )
+}
 
 function CornerBrackets({ color }: { color: string }) {
   const c = `${color}8c`
@@ -81,7 +99,7 @@ export function BLStrikerCard({ striker }: Props) {
 
         <div className="relative flex items-center justify-between gap-4">
           <div className="flex items-center gap-3 min-w-0">
-            <span className="text-3xl">{getFlag(striker.nationality)}</span>
+            <PentaRank rank={striker.striker_global_rank} />
             <div className="min-w-0">
               <p className="font-display text-xl font-black text-white leading-tight truncate">
                 {striker.name}

@@ -24,15 +24,19 @@ import { BLBanner } from "@/components/bluelock/BLBanner"
 import type { GlobalPlayer, BLStriker } from "@/lib/types"
 import type { SummaryStats }            from "@/lib/actions/players"
 
+
 type Mode = "global" | "bluelock"
 
 type Props = {
   globalPlayers: GlobalPlayer[]
   blStrikers:    BLStriker[]
   summary:       SummaryStats
+  tournamentStage: string
 }
 
-export function DashboardClient({ globalPlayers, blStrikers, summary }: Props) {
+
+
+export function DashboardClient({ globalPlayers, blStrikers, summary, tournamentStage }: Props) {
   const [mode,          setMode]         = useState<Mode>("global")
   const [showOverlay,   setShowOverlay]  = useState(false)
   const hasEnteredBL                     = useRef(false)
@@ -67,6 +71,7 @@ export function DashboardClient({ globalPlayers, blStrikers, summary }: Props) {
   function handleSelect(striker: BLStriker) {
     setSelectedStriker(striker)
   }
+    
 
   useEffect(() => {
     function onDocClick(e: MouseEvent) {
@@ -159,13 +164,15 @@ export function DashboardClient({ globalPlayers, blStrikers, summary }: Props) {
                         subline="+24 from qualifier data"
                         icon={<Users className="h-4 w-4" />}
                       />
+
                       <StatCard
                         mode="global"
-                        label="Participant Nations"
-                        value={48}
-                        subline="Four Debut Countries"
+                        label="Tournament Stage"
+                        value={tournamentStage}
+                        subline="Current Phase of Competition"
                         icon={<Activity className="h-4 w-4" />}
                       />
+
                       <StatCard
                         mode="global"
                         label="Top Scorer"

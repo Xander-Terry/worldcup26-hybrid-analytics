@@ -1,8 +1,6 @@
-
 -- =============================================
--- WC26 Hybrid Analytics — Schema v3.0
--- Source: FIFA GameDay API (live WC2026 data)
--- Competition ID: 285023
+-- WC26 Hybrid Analytics — Schema v4.0
+-- Source: FIFA GameDay API + FDH Power Rankings
 -- =============================================
 
 CREATE TABLE IF NOT EXISTS players (
@@ -56,7 +54,7 @@ CREATE TABLE IF NOT EXISTS player_stats_raw (
   fouls_against                             NUMERIC DEFAULT 0,
   fouls_for                                 NUMERIC DEFAULT 0,
   yellow_cards                              NUMERIC DEFAULT 0,
-  red_cards                                 NUMERIC DEFAULT 0,
+  red_cards                                  NUMERIC DEFAULT 0,
   indirect_red_cards                        NUMERIC DEFAULT 0,
 
   -- Movement / off-ball
@@ -71,13 +69,13 @@ CREATE TABLE IF NOT EXISTS player_stats_raw (
   receptions_under_pressure                 NUMERIC DEFAULT 0,
   number_of_involvements                    NUMERIC DEFAULT 0,
 
-  -- Physical (stored in converted units)
+  -- Physical
   total_distance_km                         NUMERIC DEFAULT 0,
   avg_speed_kmh                             NUMERIC DEFAULT 0,
   sprints                                   NUMERIC DEFAULT 0,
   speed_runs                                NUMERIC DEFAULT 0,
 
-  -- Goalkeeping (null for outfield)
+  -- Goalkeeping
   goalkeeper_saves                          NUMERIC,
   goalkeeper_actions_inside_box             NUMERIC,
   goalkeeper_actions_outside_box            NUMERIC,
@@ -115,12 +113,19 @@ CREATE TABLE IF NOT EXISTS player_stats_global (
   speed_runs_p90                     NUMERIC DEFAULT 0,
   distance_p90                       NUMERIC DEFAULT 0,
 
-  -- Rate stats (not per90 — already rates)
+  -- Rate stats
   passing_accuracy_rate              NUMERIC DEFAULT 0,
   crossing_accuracy_rate             NUMERIC DEFAULT 0,
   avg_speed_kmh                      NUMERIC DEFAULT 0,
 
-  -- Derived 6-axis scores (0-100 percentile)
+  -- Global FDH rank + score
+  global_rank                        NUMERIC,
+  global_score                       NUMERIC,
+  fdh_tier                           TEXT,
+  fdh_tier_multiplier                NUMERIC,
+  final_multiplier                   NUMERIC,
+
+  -- Derived 6-axis scores
   attacking_threat                   NUMERIC DEFAULT 0,
   chance_creation                    NUMERIC DEFAULT 0,
   ball_progression                   NUMERIC DEFAULT 0,
@@ -132,22 +137,11 @@ CREATE TABLE IF NOT EXISTS player_stats_global (
   UNIQUE(player_id)
 );
 
-CREATE TABLE IF NOT EXISTS cluster_results_global (
-  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  player_id       UUID REFERENCES players(id) ON DELETE CASCADE,
-  cluster_id      INTEGER NOT NULL,
-  archetype_label TEXT NOT NULL,
-  umap_x          NUMERIC NOT NULL,
-  umap_y          NUMERIC NOT NULL,
-  updated_at      TIMESTAMPTZ DEFAULT NOW(),
-  UNIQUE(player_id)
-);
-
 CREATE TABLE IF NOT EXISTS player_stats_bluelock (
   id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   player_id       UUID REFERENCES players(id) ON DELETE CASCADE,
 
-  -- BL category scores (0-100, normalized within FW subset)
+  -- BL category scores
   shoot           NUMERIC DEFAULT 0,
   offense         NUMERIC DEFAULT 0,
   dribble         NUMERIC DEFAULT 0,
@@ -163,7 +157,7 @@ CREATE TABLE IF NOT EXISTS player_stats_bluelock (
   grade_speed     TEXT DEFAULT 'G',
   grade_defense   TEXT DEFAULT 'G',
 
-  -- Overall
+  -- Overall BL score
   overall_score   NUMERIC DEFAULT 0,
   overall_grade   TEXT DEFAULT 'G',
 
@@ -171,7 +165,30 @@ CREATE TABLE IF NOT EXISTS player_stats_bluelock (
   ego_x           NUMERIC DEFAULT 0,
   ego_y           NUMERIC DEFAULT 0,
 
+  -- FDH-based BL rank
+  blue_lock_rank        NUMERIC,
+  blue_lock_score       NUMERIC,
+  blue_lock_tier        TEXT,
+  
+  blue_lock_multiplier  NUMERIC,
+  blue_lock_final_score NUMERIC,
+
+  striker_global_rank   NUMERIC,
+  striker_global_score  NUMERIC,
+
+
   updated_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(player_id)
+);
+
+CREATE TABLE IF NOT EXISTS cluster_results_global (
+  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  player_id       UUID REFERENCES players(id) ON DELETE CASCADE,
+  cluster_id      INTEGER NOT NULL,
+  archetype_label TEXT NOT NULL,
+  umap_x          NUMERIC NOT NULL,
+  umap_y          NUMERIC NOT NULL,
+  updated_at      TIMESTAMPTZ DEFAULT NOW(),
   UNIQUE(player_id)
 );
 

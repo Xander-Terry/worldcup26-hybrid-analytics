@@ -2,10 +2,12 @@
 
 
 //UPDATED TO NO LONGER CAUSE IPROPER MERGE ERROR< MAKE SURE TO CROSS CHECK SCHEMA WITH QUERIES CAUSE IT LEADS TO ERRORS
-import { supabase } from "@/lib/supabase/server"
+import { getServerClient } from "@/lib/supabase/server"
+
 import type { GlobalPlayer, BLStriker, LetterGrade } from "@/lib/types"
 
 type GlobalStatsRow = {
+  global_rank: number
   goals:               number
   assists:             number
   attacking_threat:    number
@@ -40,6 +42,9 @@ type BLStatsRow = {
   overall_grade: string
   ego_x:         number
   ego_y:         number
+  striker_global_rank: number
+  striker_global_score: number
+  
 }
 
 type RawStatsRow = {
@@ -54,6 +59,7 @@ type ClusterBLRow = {
 }
 
 export async function getGlobalPlayers(): Promise<GlobalPlayer[]> {
+  const supabase = getServerClient()
   const { data, error } = await supabase
     .from("players")
     .select(`
@@ -62,6 +68,7 @@ export async function getGlobalPlayers(): Promise<GlobalPlayer[]> {
       team,
       position,
       player_stats_global (
+        global_rank,
         attacking_threat,
         chance_creation,
         ball_progression,
@@ -95,8 +102,8 @@ export async function getGlobalPlayers(): Promise<GlobalPlayer[]> {
       const stats   = p.player_stats_global   as unknown as GlobalStatsRow
       const raw     = p.player_stats_raw       as unknown as RawStatsRow | null
       const cluster = p.cluster_results_global as unknown as ClusterGlobalRow
-
       return {
+        global_rank: stats.global_rank ?? 0,
         id:          p.id,
         name:        p.name,
         team:        p.team,
@@ -122,6 +129,7 @@ export async function getGlobalPlayers(): Promise<GlobalPlayer[]> {
 }
 
 export async function getBLStrikers(): Promise<BLStriker[]> {
+  const supabase = getServerClient()
   const { data, error } = await supabase
     .from("players")
     .select(`
@@ -134,12 +142,25 @@ export async function getBLStrikers(): Promise<BLStriker[]> {
         goals,
         assists
       ),
-      player_stats_bluelock (
-        shoot, offense, dribble, pass, speed, defense,
-        grade_shoot, grade_offense, grade_dribble,
-        grade_pass, grade_speed, grade_defense,
-        overall_score, overall_grade,
-        ego_x, ego_y
+      player_stats_bluelock:player_stats_bluelock (
+        shoot,
+        offense,
+        dribble,
+        pass,
+        speed,
+        defense,
+        grade_shoot,
+        grade_offense,
+        grade_dribble,
+        grade_pass,
+        grade_speed,
+        grade_defense,
+        overall_score,
+        overall_grade,
+        ego_x,
+        ego_y,
+        striker_global_rank,
+        striker_global_score
       ),
       cluster_results_bluelock (
         cluster_id,
@@ -190,10 +211,13 @@ export async function getBLStrikers(): Promise<BLStriker[]> {
         goals:           raw?.goals   ?? 0,
         assists:         raw?.assists ?? 0,
         minutes:         raw?.minutes ?? 0,
+        striker_global_rank: bl.striker_global_rank ?? 999,
+        striker_global_score: bl.striker_global_score ?? 0,
       } satisfies BLStriker
     })
-    .sort((a, b) => b.overall_score - a.overall_score)
+    .sort((a, b) => a.striker_global_rank - b.striker_global_rank)
 }
+
 
 export type SummaryStats = {
   totalPlayers: number
@@ -202,6 +226,7 @@ export type SummaryStats = {
 }
 
 export async function getSummaryStats(): Promise<SummaryStats> {
+  const supabase = getServerClient()
   const { count: playerCount } = await supabase
     .from("players")
     .select("id", { count: "exact", head: true })

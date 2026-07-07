@@ -52,6 +52,10 @@ export type DbPlayerStatsBL = {
   overall_grade: string
   ego_x:         number
   ego_y:         number
+  // ⭐ ADD THESE
+  striker_global_rank: number
+  striker_global_score: number
+
 }
 
 export type DbClusterBL = {

@@ -2,13 +2,31 @@
 
 import { useState, useMemo } from "react"
 import { motion } from "framer-motion"
+import { Search } from "lucide-react"
 import { GRADE_COLORS, BL_CAT_META } from "@/lib/types"
 import type { BLStriker, LetterGrade } from "@/lib/types"
 import { BLLetterGrade } from "@/components/bluelock/BLLetterGrade"
-import { getFlag } from "@/lib/flags"
 
 type SortKey = "overall" | "shoot" | "offense" | "dribble" | "pass" | "speed" | "defense"
 
+
+function PentaRank({ rank }: { rank: number }) {
+  return (
+    <div className="relative w-6 h-6 flex items-center justify-center shrink-0">
+      <svg viewBox="0 0 100 100" className="w-full h-full text-[#2563EB]">
+        <polygon
+          points="50,5 93,38 76,90 24,90 7,38"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="8"
+        />
+      </svg>
+      <span className="absolute seven-segment-text text-[12px] font-bold z-10">
+        {rank}
+      </span>
+    </div>
+  )
+}
 const SORT_LABELS: { key: SortKey; label: string }[] = [
   { key: "overall",  label: "OVR" },
   { key: "shoot",    label: "SHO" },
@@ -22,7 +40,9 @@ const SORT_LABELS: { key: SortKey; label: string }[] = [
 const PAGE_SIZE = 10
 
 function getScore(p: BLStriker, key: SortKey): number {
-  if (key === "overall") return p.overall_score
+  // OVR tab sorts by striker_global_rank (ascending — rank 1 = best)
+  // All other tabs sort by category score (descending)
+  if (key === "overall") return p.striker_global_rank ?? p.overall_score
   return p.categories[key as keyof typeof p.categories]
 }
 
@@ -41,11 +61,31 @@ type Props = {
 export function BLStrikerList({ strikers, selectedId, onSelect }: Props) {
   const [sortKey, setSortKey] = useState<SortKey>("overall")
   const [page,    setPage]    = useState(1)
+  const [search,  setSearch]  = useState("")
 
-  const sorted = useMemo(() =>
-    [...strikers].sort((a, b) => getScore(b, sortKey) - getScore(a, sortKey)),
-    [strikers, sortKey]
-  )
+  const isOVR = sortKey === "overall"
+
+  const filtered = useMemo(() => {
+    if (!search.trim()) return strikers
+    const q = search.toLowerCase()
+    return strikers.filter(
+      s => s.name.toLowerCase().includes(q) ||
+           s.team.toLowerCase().includes(q)
+    )
+  }, [strikers, search])
+
+  const sorted = useMemo(() => {
+    return [...filtered].sort((a, b) => {
+      if (isOVR) {
+        // Sort by striker_global_rank ascending (rank 1 first)
+        const ra = a.striker_global_rank ?? 9999
+        const rb = b.striker_global_rank ?? 9999
+        return ra - rb
+      }
+      // All other categories: descending by score
+      return getScore(b, sortKey) - getScore(a, sortKey)
+    })
+  }, [filtered, sortKey, isOVR])
 
   const totalPages  = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE))
   const currentPage = Math.min(page, totalPages)
@@ -56,14 +96,50 @@ export function BLStrikerList({ strikers, selectedId, onSelect }: Props) {
     setPage(1)
   }
 
+  function handleSearch(value: string) {
+    setSearch(value)
+    setPage(1)
+  }
+
   return (
     <div className="flex h-full flex-col rounded-xl border border-[#1e3a6a] bg-[#0E1D3D] overflow-hidden">
+      {/* Header */}
       <div className="px-4 pt-4 pb-3 border-b border-[#1e3a6a]">
         <p className="font-display text-xs font-bold uppercase tracking-widest text-white">
           Striker Roster
         </p>
       </div>
 
+      {/* Search bar */}
+      <div className="px-3 pt-2 pb-1 border-b border-[#1e3a6a]">
+        <div className="relative">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3 w-3 text-[#6B7F9B]" />
+          <input
+            value={search}
+            onChange={e => handleSearch(e.target.value)}
+            placeholder="Search striker or team..."
+            className="w-full rounded-md pl-7 pr-3 py-1.5 text-[11px] font-mono"
+            style={{
+              background:   "#060F26",
+              border:       "1px solid #1e3a6a",
+              color:        "#fff",
+              outline:      "none",
+            }}
+            onFocus={e => { e.currentTarget.style.borderColor = "#00F0FF" }}
+            onBlur={e  => { e.currentTarget.style.borderColor = "#1e3a6a" }}
+          />
+          {search && (
+            <button
+              onClick={() => handleSearch("")}
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-[#6B7F9B] hover:text-white transition-colors text-xs"
+            >
+              ✕
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Sort strip */}
       <div className="flex items-center gap-1 px-3 py-2 border-b border-[#1e3a6a] overflow-x-auto no-scrollbar">
         {SORT_LABELS.map(({ key, label }) => {
           const active = key === sortKey
@@ -84,114 +160,135 @@ export function BLStrikerList({ strikers, selectedId, onSelect }: Props) {
         })}
       </div>
 
+      {/* Search result count */}
+      {search.trim() && (
+        <div className="px-4 py-1.5 border-b border-[#1e3a6a]">
+          <p className="font-mono text-[9px] text-[#6B7F9B]">
+            {filtered.length} result{filtered.length !== 1 ? "s" : ""} for &quot;{search}&quot;
+          </p>
+        </div>
+      )}
+
+      {/* Roster rows */}
       <div className="flex-1 overflow-y-auto no-scrollbar px-2 py-2 space-y-1 min-h-0">
-        {pageRows.map((striker) => {
-          const isSelected = striker.id === selectedId
-          const gradeColor = GRADE_COLORS[striker.overall_grade]
-          const isElite    = striker.overall_grade === "S+" || striker.overall_grade === "S"
+        {pageRows.length === 0 ? (
+          <div className="flex items-center justify-center h-24">
+            <p className="font-mono text-[10px] text-[#6B7F9B]">No strikers found</p>
+          </div>
+        ) : (
+          pageRows.map((striker) => {
+            const isSelected  = striker.id === selectedId
+            const gradeColor  = GRADE_COLORS[striker.overall_grade]
+            const isElite     = striker.overall_grade === "S+" || striker.overall_grade === "S"
 
-          return (
-            <div key={striker.id} className="relative rounded-lg group">
+            return (
+              <div key={striker.id} className="relative rounded-lg group">
 
-
-              {/* CONDITIONAL ELECTRIC + GLOW WRAPPER */}
-              <div
-                className={`
-                  absolute inset-0 rounded-lg pointer-events-none z-[3]
-                  transition-opacity duration-200
-                  ${isSelected ? "opacity-100" : "opacity-0 group-hover:opacity-100"}
-                `}
-              >
-                {/* Electric animated border */}
+                {/* ELECTRIC + GLOW WRAPPER */}
                 <div
-                  className="absolute inset-0 rounded-lg border-2"
-                  style={{
-                    borderColor: gradeColor,
-                    filter: "url(#bl-electric-border)",
-                  }}
-                />
+                  className={`
+                    absolute inset-0 rounded-lg pointer-events-none z-[3]
+                    transition-opacity duration-200
+                    ${isSelected ? "opacity-100" : "opacity-0 group-hover:opacity-100"}
+                  `}
+                >
+                  {/* Electric animated border */}
+                  <div
+                    className="absolute inset-0 rounded-lg border-2"
+                    style={{
+                      borderColor: gradeColor,
+                      filter: "url(#bl-electric-border)",
+                    }}
+                  />
 
-                {/* Fog glow layers */}
-                <div
-                  className="absolute inset-0 rounded-lg border-2"
-                  style={{
-                    borderColor: `${gradeColor}cc`,
-                    filter: "blur(6px)",
-                    opacity: 0.55,
-                  }}
-                />
-                <div
-                  className="absolute inset-0 rounded-lg border-2"
-                  style={{
-                    borderColor: `${gradeColor}aa`,
-                    filter: "blur(14px)",
-                    opacity: 0.40,
-                  }}
-                />
-                <div
-                  className="absolute inset-0 rounded-lg border-2"
-                  style={{
-                    borderColor: `${gradeColor}66`,
-                    filter: "blur(25px)",
-                    opacity: 0.40,
-                  }}
-                />
-              </div>
+                  {/* Fog glow layers */}
+                  <div
+                    className="absolute inset-0 rounded-lg border-2"
+                    style={{
+                      borderColor: `${gradeColor}cc`,
+                      filter: "blur(6px)",
+                      opacity: 0.55,
+                    }}
+                  />
+                  <div
+                    className="absolute inset-0 rounded-lg border-2"
+                    style={{
+                      borderColor: `${gradeColor}aa`,
+                      filter: "blur(14px)",
+                      opacity: 0.40,
+                    }}
+                  />
+                  <div
+                    className="absolute inset-0 rounded-lg border-2"
+                    style={{
+                      borderColor: `${gradeColor}66`,
+                      filter: "blur(25px)",
+                      opacity: 0.40,
+                    }}
+                  />
+                </div>
 
-              {/* ACTUAL CARD CONTENT */}
-              <motion.button
-                key={striker.id}
-                onClick={() => onSelect(striker)}
-                whileHover={{ scale: 1.01 }}
-                className="w-full rounded-lg text-left bg-[#060F26] border px-3 py-2.5 z-[1]"
-                style={{
-                  borderColor: isSelected ? gradeColor : "#1e3a6a",
-                  background: isSelected ? `${gradeColor}12` : "#060F26",
-                }}
-              >
+                {/* ACTUAL CARD CONTENT */}
+                <motion.button
+                  onClick={() => onSelect(striker)}
+                  whileHover={{ scale: 1.005 }}
+                  transition={{ duration: 0.15 }}
+                  className="w-full rounded-lg px-3 py-2.5 text-left transition-all duration-150 bg-[#060F26] border z-[1]"
+                  style={{
+                    borderColor: isSelected ? gradeColor : "#1e3a6a",
+                    background: isSelected ? `${gradeColor}12` : "#060F26",
+                    boxShadow: isSelected && isElite ? `0 0 14px ${gradeColor}22` : undefined,
+                  }}
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
 
-                {/* your existing content stays EXACTLY the same */}
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <span className="text-base shrink-0">{getFlag(striker.nationality)}</span>
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-1.5">
-                        <p className="font-display text-sm font-bold text-white truncate">
-                          {shortName(striker.name)}
+                      <PentaRank rank={striker.striker_global_rank} />
+
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          <p className="font-display text-sm font-bold text-white truncate">
+                            {shortName(striker.name)}
+                          </p>
+                          <span
+                            className="shrink-0 inline-flex items-center justify-center rounded px-1 font-mono text-[9px] font-black"
+                            style={{
+                              color: gradeColor,
+                              backgroundColor: `${gradeColor}1a`,
+                              border: `1px solid ${gradeColor}44`,
+                              boxShadow: isElite ? `0 0 6px ${gradeColor}99` : undefined,
+                            }}
+                          >
+                            {striker.overall_grade}
+                          </span>
+                        </div>
+                        <p className="font-mono text-[9px] text-[#6B7F9B] truncate">
+                          {striker.team}
                         </p>
-                        <span
-                          className="shrink-0 inline-flex items-center justify-center rounded px-1 font-mono text-[9px] font-black"
-                          style={{
-                            color:           gradeColor,
-                            backgroundColor: `${gradeColor}1a`,
-                            border:          `1px solid ${gradeColor}44`,
-                            boxShadow:       isElite ? `0 0 6px ${gradeColor}99` : undefined,
-                          }}
-                        >
-                          {striker.overall_grade}
-                        </span>
                       </div>
-                      <p className="font-mono text-[9px] text-[#6B7F9B] truncate">{striker.team}</p>
+                    </div>
+
+                    <div className="flex items-center gap-0.5 shrink-0">
+                      {BL_CAT_META.map(cat => {
+                        const gradeKey = `grade_${cat.key}` as keyof typeof striker.grades
+                        const g = striker.grades[gradeKey] as LetterGrade
+                        return <BLLetterGrade key={cat.key} grade={g} size="sm" />
+                      })}
                     </div>
                   </div>
+                </motion.button>
+              </div>
 
-                  <div className="flex items-center gap-0.5 shrink-0">
-                    {BL_CAT_META.map(cat => {
-                      const gradeKey = `grade_${cat.key}` as keyof typeof striker.grades
-                      const g = striker.grades[gradeKey] as LetterGrade
-                      return <BLLetterGrade key={cat.key} grade={g} size="sm" />
-                    })}
-                  </div>
-                </div>
-              </motion.button>
-            </div>
-          )
-        })}
+            )
+          })
+        )}
       </div>
 
+      {/* Pagination */}
       <div className="flex items-center justify-between px-4 py-3 border-t border-[#1e3a6a]">
         <p className="font-mono text-[10px] text-[#6B7F9B]">
-          {sorted.length} strikers · page {currentPage}/{totalPages}
+          {search.trim() ? `${filtered.length} of ${strikers.length}` : `${sorted.length} strikers`}
+          {" · "}page {currentPage}/{totalPages}
         </p>
         <div className="flex gap-1">
           <button

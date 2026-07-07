@@ -148,3 +148,15 @@
   );
   opacity: 0.065;
 }
+
+/* Digital font for badge rnakings*/ 
+@font-face {
+  font-family: 'Digital7';
+  src: url('/fonts/digital-7.ttf') format('truetype');
+}
+
+.seven-segment-text {
+  font-family: 'Digital7', monospace;
+  color: #00F0FF ;
+  text-shadow: 0 0 4px #00F0FF;
+}

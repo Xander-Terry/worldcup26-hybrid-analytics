@@ -46,6 +46,7 @@ export const AXIS_META = [
 ] as const
 
 export type GlobalPlayer = {
+  global_rank?: number
   id:               string
   name:             string
   team:             string
@@ -103,6 +104,8 @@ export type BLStriker = {
   grades:          BLCategoryGrades
   overall_score:   number
   overall_grade:   LetterGrade
+  striker_global_rank: number
+  striker_global_score: number
   // Ego Map
   ego_x:           number
   ego_y:           number
@@ -113,6 +116,8 @@ export type BLStriker = {
   goals:           number
   assists:         number
   minutes:         number
+
+
 }
 
 // ── Cluster colors ────────────────────────────────────────────────────────────
