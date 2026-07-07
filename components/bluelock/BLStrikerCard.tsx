@@ -99,7 +99,7 @@ export function BLStrikerCard({ striker }: Props) {
 
         <div className="relative flex items-center justify-between gap-4">
           <div className="flex items-center gap-3 min-w-0">
-            <PentaRank rank={striker.striker_global_rank} />
+            <PentaRank rank={striker.bl_rank} />
             <div className="min-w-0">
               <p className="font-display text-xl font-black text-white leading-tight truncate">
                 {striker.name}

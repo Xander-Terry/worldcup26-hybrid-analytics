@@ -42,7 +42,7 @@ const PAGE_SIZE = 10
 function getScore(p: BLStriker, key: SortKey): number {
   // OVR tab sorts by striker_global_rank (ascending — rank 1 = best)
   // All other tabs sort by category score (descending)
-  if (key === "overall") return p.striker_global_rank ?? p.overall_score
+  if (key === "overall") return p.bl_rank ?? p.overall_score
   return p.categories[key as keyof typeof p.categories]
 }
 
@@ -78,8 +78,8 @@ export function BLStrikerList({ strikers, selectedId, onSelect }: Props) {
     return [...filtered].sort((a, b) => {
       if (isOVR) {
         // Sort by striker_global_rank ascending (rank 1 first)
-        const ra = a.striker_global_rank ?? 9999
-        const rb = b.striker_global_rank ?? 9999
+        const ra = a.bl_rank ?? 9999
+        const rb = b.bl_rank ?? 9999
         return ra - rb
       }
       // All other categories: descending by score
@@ -243,7 +243,7 @@ export function BLStrikerList({ strikers, selectedId, onSelect }: Props) {
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2 min-w-0">
 
-                      <PentaRank rank={striker.striker_global_rank} />
+                      <PentaRank rank={striker.bl_rank} />
 
                       <div className="min-w-0">
                         <div className="flex items-center gap-1.5">

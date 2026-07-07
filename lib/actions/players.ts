@@ -51,6 +51,9 @@ type RawStatsRow = {
   minutes: number
   goals:   number
   assists: number
+  attacking_score: number
+  creativity_score: number
+  defensive_score: number
 }
 
 type ClusterBLRow = {
@@ -129,6 +132,7 @@ export async function getGlobalPlayers(): Promise<GlobalPlayer[]> {
 }
 
 export async function getBLStrikers(): Promise<BLStriker[]> {
+  
   const supabase = getServerClient()
   const { data, error } = await supabase
     .from("players")
@@ -140,9 +144,13 @@ export async function getBLStrikers(): Promise<BLStriker[]> {
       player_stats_raw (
         minutes,
         goals,
-        assists
+        assists,
+        attacking_score,
+        creativity_score,
+        defensive_score
+
       ),
-      player_stats_bluelock:player_stats_bluelock (
+      player_stats_bluelock!inner(
         shoot,
         offense,
         dribble,
@@ -174,12 +182,21 @@ export async function getBLStrikers(): Promise<BLStriker[]> {
     return []
   }
 
-  return (data ?? [])
-    .filter(p => p.player_stats_bluelock && p.cluster_results_bluelock)
+  const enriched = (data ?? [])
+    .filter(p => p.player_stats_bluelock)
     .map(p => {
       const bl      = p.player_stats_bluelock   as unknown as BLStatsRow
       const raw     = p.player_stats_raw         as unknown as RawStatsRow | null
       const cluster = p.cluster_results_bluelock as unknown as ClusterBLRow
+
+      const fdhScore =
+        (raw?.goals ?? 0) * 0.4 +
+        (raw?.attacking_score ?? 0) * 0.2 +
+        (raw?.creativity_score ?? 0) * 0.2 +
+        (raw?.defensive_score ?? 0) * 0.2
+
+
+
 
       return {
         id:          p.id,
@@ -213,9 +230,25 @@ export async function getBLStrikers(): Promise<BLStriker[]> {
         minutes:         raw?.minutes ?? 0,
         striker_global_rank: bl.striker_global_rank ?? 999,
         striker_global_score: bl.striker_global_score ?? 0,
+
+        fdhScore,
+        bl_rank: 0
       } satisfies BLStriker
     })
-    .sort((a, b) => a.striker_global_rank - b.striker_global_rank)
+    /*
+    enriched.sort((a, b) => {
+      if (b.goals !== a.goals) {
+        return b.goals - a.goals
+      }
+      return a.fdhScore - b.fdhScore
+    })*/
+
+    enriched.sort((a, b) => b.fdhScore - a.fdhScore)
+    // ⭐ Assign final BL rank
+    enriched.forEach((p, i) => {
+      p.bl_rank = i + 1
+    })
+  return enriched
 }
 
 

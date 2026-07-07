@@ -117,6 +117,9 @@ export type BLStriker = {
   assists:         number
   minutes:         number
 
+  fdhScore: number
+  bl_rank: number
+
 
 }
 
