@@ -4,6 +4,7 @@ from pathlib import Path
 
 PR_CSV = Path("data/processed/power_rankings.csv")
 df_pr = pd.read_csv(PR_CSV)
+# Map scraped BL rank to player_id
 
 stage_value = df_pr["competition_stage"].dropna().iloc[0]
 
