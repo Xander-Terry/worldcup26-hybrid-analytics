@@ -220,6 +220,13 @@ for _, row in df.iterrows():
         "goalkeeper_saves":              sn(row.get("goalkeeper_saves")),
         "goalkeeper_actions_inside_box": sn(row.get("goalkeeper_defensive_actions_inside_penalty_area")),
         "goalkeeper_actions_outside_box":sn(row.get("goalkeeper_defensive_actions_outside_penalty_area")),
+        "attacking_score":          sf(row.get("attacking_score")),
+        "creativity_score":         sf(row.get("creativity_score")),
+        "defensive_score":          sf(row.get("defensive_score")),
+        "attacking_rank":           sf(row.get("attacking_rank")),
+        "creativity_rank":          sf(row.get("creativity_rank")),
+        "defensive_rank":           sf(row.get("defensive_rank")),
+
     })
 upsert_batch("player_stats_raw", raw_records)
 

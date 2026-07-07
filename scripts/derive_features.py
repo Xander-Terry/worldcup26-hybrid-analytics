@@ -499,7 +499,6 @@ def compute_bluelock(f: pd.DataFrame) -> pd.DataFrame:
     # ── BL rank-tier scaling (BEFORE normalization) ───────────────────────────
     from power_ranking import (
         compute_striker_global_score, compute_striker_global_rank,
-        apply_bl_tier_scaling
     )
 
     BL_CAT_COLS = ["shoot_raw", "offense_raw", "dribble_raw", "pass_raw", "speed_raw", "defense_raw"]
